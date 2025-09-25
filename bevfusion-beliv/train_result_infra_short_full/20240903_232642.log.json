@@ -1,0 +1,3 @@
+{}
+{"mode": "train", "epoch": 1, "iter": 50, "lr": 8e-05, "memory": 6905, "data_time": 0.27308, "loss/object/loss_heatmap": 237.52782, "loss/object/layer_-1_loss_cls": 1.40717, "loss/object/layer_-1_loss_bbox": 10.91014, "stats/object/matched_ious": 0.01189, "loss": 249.84513, "grad_norm": NaN, "time": 1.37329}
+{"mode": "train", "epoch": 1, "iter": 100, "lr": 9e-05, "memory": 6930, "data_time": 0.1889, "loss/object/loss_heatmap": 46.1066, "loss/object/layer_-1_loss_cls": 0.78699, "loss/object/layer_-1_loss_bbox": 5.4084, "stats/object/matched_ious": 0.02352, "loss": 52.30199, "grad_norm": 499.46982, "time": 1.28501}

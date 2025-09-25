@@ -1,0 +1,2946 @@
+2024-12-14 20:53:48,937 - mmdet3d - INFO - Config:
+seed = 0
+deterministic = False
+checkpoint_config = dict(interval=1, max_keep_ckpts=1)
+log_config = dict(
+    interval=50,
+    hooks=[dict(type='TextLoggerHook'),
+           dict(type='TensorboardLoggerHook')])
+load_from = None
+resume_from = None
+cudnn_benchmark = False
+fp16 = dict(loss_scale=dict(growth_interval=2000))
+max_epochs = 20
+runner = dict(type='CustomEpochBasedRunner', max_epochs=20)
+dataset_type = 'NuScenesDataset'
+dataset_root = '/scratch/jmeng18/V2X-SIM/'
+gt_paste_stop_epoch = -1
+reduce_beams = 32
+load_dim = 5
+use_dim = 5
+load_augmented = None
+point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+voxel_size = [0.1, 0.1, 0.2]
+image_size = [256, 704]
+augment2d = dict(
+    resize=[[0.38, 0.55], [0.48, 0.48]],
+    rotate=[-5.4, 5.4],
+    gridmask=dict(prob=0.0, fixed_prob=True))
+augment3d = dict(
+    scale=[0.9, 1.1], rotate=[-0.78539816, 0.78539816], translate=0.5)
+object_classes = ['car']
+map_classes = ['drivable_area', 'ped_crossing', 'walkway']
+input_modality = dict(
+    use_lidar=True,
+    use_camera=True,
+    use_radar=False,
+    use_map=False,
+    use_external=False)
+train_pipeline = [
+    dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+    dict(
+        type='LoadPointsFromFile',
+        coord_type='LIDAR',
+        load_dim=5,
+        use_dim=5,
+        reduce_beams=32,
+        load_augmented=None),
+    dict(
+        type='LoadPointsFromMultiSweeps',
+        sweeps_num=9,
+        load_dim=5,
+        use_dim=5,
+        reduce_beams=32,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        load_augmented=None),
+    dict(
+        type='LoadAnnotations3D',
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_attr_label=False),
+    dict(
+        type='ObjectPaste',
+        stop_epoch=-1,
+        db_sampler=dict(
+            dataset_root='/scratch/jmeng18/V2X-SIM/',
+            info_path='/scratch/jmeng18/V2X-SIM/nuscenes_dbinfos_train.pkl',
+            rate=1.0,
+            prepare=dict(
+                filter_by_difficulty=[-1], filter_by_min_points=dict(car=5)),
+            classes=['car'],
+            sample_groups=dict(car=2),
+            points_loader=dict(
+                type='LoadPointsFromFile',
+                coord_type='LIDAR',
+                load_dim=5,
+                use_dim=5,
+                reduce_beams=32))),
+    dict(
+        type='ImageAug3D',
+        final_dim=[256, 704],
+        resize_lim=[0.38, 0.55],
+        bot_pct_lim=[0.0, 0.0],
+        rot_lim=[-5.4, 5.4],
+        rand_flip=True,
+        is_train=True),
+    dict(
+        type='GlobalRotScaleTrans',
+        resize_lim=[0.9, 1.1],
+        rot_lim=[-0.78539816, 0.78539816],
+        trans_lim=0.5,
+        is_train=True),
+    dict(
+        type='LoadBEVSegmentation',
+        dataset_root='/scratch/jmeng18/V2X-SIM/',
+        xbound=[-50.0, 50.0, 0.5],
+        ybound=[-50.0, 50.0, 0.5],
+        classes=['drivable_area', 'ped_crossing', 'walkway']),
+    dict(type='RandomFlip3D'),
+    dict(
+        type='PointsRangeFilter',
+        point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+    dict(
+        type='ObjectRangeFilter',
+        point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+    dict(type='ObjectNameFilter', classes=['car']),
+    dict(
+        type='ImageNormalize',
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]),
+    dict(
+        type='GridMask',
+        use_h=True,
+        use_w=True,
+        max_epoch=20,
+        rotate=1,
+        offset=False,
+        ratio=0.5,
+        mode=1,
+        prob=0.0,
+        fixed_prob=True),
+    dict(type='PointShuffle'),
+    dict(type='DefaultFormatBundle3D', classes=['car']),
+    dict(
+        type='Collect3D',
+        keys=['img', 'points', 'gt_bboxes_3d', 'gt_labels_3d', 'gt_masks_bev'],
+        meta_keys=[
+            'camera_intrinsics', 'camera2ego', 'lidar2ego', 'lidar2camera',
+            'camera2lidar', 'lidar2image', 'img_aug_matrix', 'lidar_aug_matrix'
+        ]),
+    dict(type='GTDepth', keyframe_only=True)
+]
+test_pipeline = [
+    dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+    dict(
+        type='LoadPointsFromFile',
+        coord_type='LIDAR',
+        load_dim=5,
+        use_dim=5,
+        reduce_beams=32,
+        load_augmented=None),
+    dict(
+        type='LoadPointsFromMultiSweeps',
+        sweeps_num=9,
+        load_dim=5,
+        use_dim=5,
+        reduce_beams=32,
+        pad_empty_sweeps=True,
+        remove_close=True,
+        load_augmented=None),
+    dict(
+        type='LoadAnnotations3D',
+        with_bbox_3d=True,
+        with_label_3d=True,
+        with_attr_label=False),
+    dict(
+        type='ImageAug3D',
+        final_dim=[256, 704],
+        resize_lim=[0.48, 0.48],
+        bot_pct_lim=[0.0, 0.0],
+        rot_lim=[0.0, 0.0],
+        rand_flip=False,
+        is_train=False),
+    dict(
+        type='GlobalRotScaleTrans',
+        resize_lim=[1.0, 1.0],
+        rot_lim=[0.0, 0.0],
+        trans_lim=0.0,
+        is_train=False),
+    dict(
+        type='LoadBEVSegmentation',
+        dataset_root='/scratch/jmeng18/V2X-SIM/',
+        xbound=[-50.0, 50.0, 0.5],
+        ybound=[-50.0, 50.0, 0.5],
+        classes=['drivable_area', 'ped_crossing', 'walkway']),
+    dict(
+        type='PointsRangeFilter',
+        point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+    dict(
+        type='ImageNormalize',
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]),
+    dict(type='DefaultFormatBundle3D', classes=['car']),
+    dict(
+        type='Collect3D',
+        keys=['img', 'points', 'gt_bboxes_3d', 'gt_labels_3d', 'gt_masks_bev'],
+        meta_keys=[
+            'camera_intrinsics', 'camera2ego', 'lidar2ego', 'lidar2camera',
+            'camera2lidar', 'lidar2image', 'img_aug_matrix', 'lidar_aug_matrix'
+        ]),
+    dict(type='GTDepth', keyframe_only=True)
+]
+data = dict(
+    samples_per_gpu=1,
+    workers_per_gpu=1,
+    train=dict(
+        type='CBGSDataset',
+        dataset=dict(
+            type='NuScenesDataset',
+            dataset_root='/scratch/jmeng18/V2X-SIM/',
+            ann_file='/scratch/jmeng18/V2X-SIM/nuscenes_infos_train.pkl',
+            pipeline=[
+                dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+                dict(
+                    type='LoadPointsFromFile',
+                    coord_type='LIDAR',
+                    load_dim=5,
+                    use_dim=5,
+                    reduce_beams=32,
+                    load_augmented=None),
+                dict(
+                    type='LoadPointsFromMultiSweeps',
+                    sweeps_num=9,
+                    load_dim=5,
+                    use_dim=5,
+                    reduce_beams=32,
+                    pad_empty_sweeps=True,
+                    remove_close=True,
+                    load_augmented=None),
+                dict(
+                    type='LoadAnnotations3D',
+                    with_bbox_3d=True,
+                    with_label_3d=True,
+                    with_attr_label=False),
+                dict(
+                    type='ObjectPaste',
+                    stop_epoch=-1,
+                    db_sampler=dict(
+                        dataset_root='/scratch/jmeng18/V2X-SIM/',
+                        info_path=
+                        '/scratch/jmeng18/V2X-SIM/nuscenes_dbinfos_train.pkl',
+                        rate=1.0,
+                        prepare=dict(
+                            filter_by_difficulty=[-1],
+                            filter_by_min_points=dict(car=5)),
+                        classes=['car'],
+                        sample_groups=dict(car=2),
+                        points_loader=dict(
+                            type='LoadPointsFromFile',
+                            coord_type='LIDAR',
+                            load_dim=5,
+                            use_dim=5,
+                            reduce_beams=32))),
+                dict(
+                    type='ImageAug3D',
+                    final_dim=[256, 704],
+                    resize_lim=[0.38, 0.55],
+                    bot_pct_lim=[0.0, 0.0],
+                    rot_lim=[-5.4, 5.4],
+                    rand_flip=True,
+                    is_train=True),
+                dict(
+                    type='GlobalRotScaleTrans',
+                    resize_lim=[0.9, 1.1],
+                    rot_lim=[-0.78539816, 0.78539816],
+                    trans_lim=0.5,
+                    is_train=True),
+                dict(
+                    type='LoadBEVSegmentation',
+                    dataset_root='/scratch/jmeng18/V2X-SIM/',
+                    xbound=[-50.0, 50.0, 0.5],
+                    ybound=[-50.0, 50.0, 0.5],
+                    classes=['drivable_area', 'ped_crossing', 'walkway']),
+                dict(type='RandomFlip3D'),
+                dict(
+                    type='PointsRangeFilter',
+                    point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+                dict(
+                    type='ObjectRangeFilter',
+                    point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+                dict(type='ObjectNameFilter', classes=['car']),
+                dict(
+                    type='ImageNormalize',
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]),
+                dict(
+                    type='GridMask',
+                    use_h=True,
+                    use_w=True,
+                    max_epoch=20,
+                    rotate=1,
+                    offset=False,
+                    ratio=0.5,
+                    mode=1,
+                    prob=0.0,
+                    fixed_prob=True),
+                dict(type='PointShuffle'),
+                dict(type='DefaultFormatBundle3D', classes=['car']),
+                dict(
+                    type='Collect3D',
+                    keys=[
+                        'img', 'points', 'gt_bboxes_3d', 'gt_labels_3d',
+                        'gt_masks_bev'
+                    ],
+                    meta_keys=[
+                        'camera_intrinsics', 'camera2ego', 'lidar2ego',
+                        'lidar2camera', 'camera2lidar', 'lidar2image',
+                        'img_aug_matrix', 'lidar_aug_matrix'
+                    ]),
+                dict(type='GTDepth', keyframe_only=True)
+            ],
+            object_classes=['car'],
+            map_classes=['drivable_area', 'ped_crossing', 'walkway'],
+            modality=dict(
+                use_lidar=True,
+                use_camera=True,
+                use_radar=False,
+                use_map=False,
+                use_external=False),
+            test_mode=False,
+            use_valid_flag=True,
+            box_type_3d='LiDAR')),
+    val=dict(
+        type='NuScenesDataset',
+        dataset_root='/scratch/jmeng18/V2X-SIM/',
+        ann_file='/scratch/jmeng18/V2X-SIM/nuscenes_infos_val.pkl',
+        pipeline=[
+            dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+            dict(
+                type='LoadPointsFromFile',
+                coord_type='LIDAR',
+                load_dim=5,
+                use_dim=5,
+                reduce_beams=32,
+                load_augmented=None),
+            dict(
+                type='LoadPointsFromMultiSweeps',
+                sweeps_num=9,
+                load_dim=5,
+                use_dim=5,
+                reduce_beams=32,
+                pad_empty_sweeps=True,
+                remove_close=True,
+                load_augmented=None),
+            dict(
+                type='LoadAnnotations3D',
+                with_bbox_3d=True,
+                with_label_3d=True,
+                with_attr_label=False),
+            dict(
+                type='ImageAug3D',
+                final_dim=[256, 704],
+                resize_lim=[0.48, 0.48],
+                bot_pct_lim=[0.0, 0.0],
+                rot_lim=[0.0, 0.0],
+                rand_flip=False,
+                is_train=False),
+            dict(
+                type='GlobalRotScaleTrans',
+                resize_lim=[1.0, 1.0],
+                rot_lim=[0.0, 0.0],
+                trans_lim=0.0,
+                is_train=False),
+            dict(
+                type='LoadBEVSegmentation',
+                dataset_root='/scratch/jmeng18/V2X-SIM/',
+                xbound=[-50.0, 50.0, 0.5],
+                ybound=[-50.0, 50.0, 0.5],
+                classes=['drivable_area', 'ped_crossing', 'walkway']),
+            dict(
+                type='PointsRangeFilter',
+                point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+            dict(
+                type='ImageNormalize',
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]),
+            dict(type='DefaultFormatBundle3D', classes=['car']),
+            dict(
+                type='Collect3D',
+                keys=[
+                    'img', 'points', 'gt_bboxes_3d', 'gt_labels_3d',
+                    'gt_masks_bev'
+                ],
+                meta_keys=[
+                    'camera_intrinsics', 'camera2ego', 'lidar2ego',
+                    'lidar2camera', 'camera2lidar', 'lidar2image',
+                    'img_aug_matrix', 'lidar_aug_matrix'
+                ]),
+            dict(type='GTDepth', keyframe_only=True)
+        ],
+        object_classes=['car'],
+        map_classes=['drivable_area', 'ped_crossing', 'walkway'],
+        modality=dict(
+            use_lidar=True,
+            use_camera=True,
+            use_radar=False,
+            use_map=False,
+            use_external=False),
+        test_mode=False,
+        box_type_3d='LiDAR'),
+    test=dict(
+        type='NuScenesDataset',
+        dataset_root='/scratch/jmeng18/V2X-SIM/',
+        ann_file='/scratch/jmeng18/V2X-SIM/nuscenes_infos_val.pkl',
+        pipeline=[
+            dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+            dict(
+                type='LoadPointsFromFile',
+                coord_type='LIDAR',
+                load_dim=5,
+                use_dim=5,
+                reduce_beams=32,
+                load_augmented=None),
+            dict(
+                type='LoadPointsFromMultiSweeps',
+                sweeps_num=9,
+                load_dim=5,
+                use_dim=5,
+                reduce_beams=32,
+                pad_empty_sweeps=True,
+                remove_close=True,
+                load_augmented=None),
+            dict(
+                type='LoadAnnotations3D',
+                with_bbox_3d=True,
+                with_label_3d=True,
+                with_attr_label=False),
+            dict(
+                type='ImageAug3D',
+                final_dim=[256, 704],
+                resize_lim=[0.48, 0.48],
+                bot_pct_lim=[0.0, 0.0],
+                rot_lim=[0.0, 0.0],
+                rand_flip=False,
+                is_train=False),
+            dict(
+                type='GlobalRotScaleTrans',
+                resize_lim=[1.0, 1.0],
+                rot_lim=[0.0, 0.0],
+                trans_lim=0.0,
+                is_train=False),
+            dict(
+                type='LoadBEVSegmentation',
+                dataset_root='/scratch/jmeng18/V2X-SIM/',
+                xbound=[-50.0, 50.0, 0.5],
+                ybound=[-50.0, 50.0, 0.5],
+                classes=['drivable_area', 'ped_crossing', 'walkway']),
+            dict(
+                type='PointsRangeFilter',
+                point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+            dict(
+                type='ImageNormalize',
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]),
+            dict(type='DefaultFormatBundle3D', classes=['car']),
+            dict(
+                type='Collect3D',
+                keys=[
+                    'img', 'points', 'gt_bboxes_3d', 'gt_labels_3d',
+                    'gt_masks_bev'
+                ],
+                meta_keys=[
+                    'camera_intrinsics', 'camera2ego', 'lidar2ego',
+                    'lidar2camera', 'camera2lidar', 'lidar2image',
+                    'img_aug_matrix', 'lidar_aug_matrix'
+                ]),
+            dict(type='GTDepth', keyframe_only=True)
+        ],
+        object_classes=['car'],
+        map_classes=['drivable_area', 'ped_crossing', 'walkway'],
+        modality=dict(
+            use_lidar=True,
+            use_camera=True,
+            use_radar=False,
+            use_map=False,
+            use_external=False),
+        test_mode=True,
+        box_type_3d='LiDAR'))
+evaluation = dict(
+    interval=1,
+    pipeline=[
+        dict(type='LoadMultiViewImageFromFiles', to_float32=True),
+        dict(
+            type='LoadPointsFromFile',
+            coord_type='LIDAR',
+            load_dim=5,
+            use_dim=5,
+            reduce_beams=32,
+            load_augmented=None),
+        dict(
+            type='LoadPointsFromMultiSweeps',
+            sweeps_num=9,
+            load_dim=5,
+            use_dim=5,
+            reduce_beams=32,
+            pad_empty_sweeps=True,
+            remove_close=True,
+            load_augmented=None),
+        dict(
+            type='LoadAnnotations3D',
+            with_bbox_3d=True,
+            with_label_3d=True,
+            with_attr_label=False),
+        dict(
+            type='ImageAug3D',
+            final_dim=[256, 704],
+            resize_lim=[0.48, 0.48],
+            bot_pct_lim=[0.0, 0.0],
+            rot_lim=[0.0, 0.0],
+            rand_flip=False,
+            is_train=False),
+        dict(
+            type='GlobalRotScaleTrans',
+            resize_lim=[1.0, 1.0],
+            rot_lim=[0.0, 0.0],
+            trans_lim=0.0,
+            is_train=False),
+        dict(
+            type='LoadBEVSegmentation',
+            dataset_root='/scratch/jmeng18/V2X-SIM/',
+            xbound=[-50.0, 50.0, 0.5],
+            ybound=[-50.0, 50.0, 0.5],
+            classes=['drivable_area', 'ped_crossing', 'walkway']),
+        dict(
+            type='PointsRangeFilter',
+            point_cloud_range=[-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]),
+        dict(
+            type='ImageNormalize',
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]),
+        dict(type='DefaultFormatBundle3D', classes=['car']),
+        dict(
+            type='Collect3D',
+            keys=[
+                'img', 'points', 'gt_bboxes_3d', 'gt_labels_3d', 'gt_masks_bev'
+            ],
+            meta_keys=[
+                'camera_intrinsics', 'camera2ego', 'lidar2ego', 'lidar2camera',
+                'camera2lidar', 'lidar2image', 'img_aug_matrix',
+                'lidar_aug_matrix'
+            ]),
+        dict(type='GTDepth', keyframe_only=True)
+    ])
+model = dict(
+    type='BEVFusion',
+    heads=dict(
+        object=None,
+        map=dict(
+            type='BEVSegmentationHead',
+            in_channels=256,
+            grid_transform=dict(
+                input_scope=[[-51.2, 51.2, 0.8], [-51.2, 51.2, 0.8]],
+                output_scope=[[-50, 50, 0.5], [-50, 50, 0.5]]),
+            classes=['drivable_area', 'ped_crossing', 'walkway'],
+            loss='focal')),
+    encoders=dict(
+        lidar=None,
+        camera=dict(
+            backbone=dict(
+                type='SwinTransformer',
+                embed_dims=96,
+                depths=[2, 2, 6, 2],
+                num_heads=[3, 6, 12, 24],
+                window_size=7,
+                mlp_ratio=4,
+                qkv_bias=True,
+                qk_scale=None,
+                drop_rate=0.0,
+                attn_drop_rate=0.0,
+                drop_path_rate=0.3,
+                patch_norm=True,
+                out_indices=[1, 2, 3],
+                with_cp=False,
+                convert_weights=True,
+                init_cfg=dict(
+                    type='Pretrained',
+                    checkpoint=
+                    'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'
+                )),
+            neck=dict(
+                type='GeneralizedLSSFPN',
+                in_channels=[192, 384, 768],
+                out_channels=256,
+                start_level=0,
+                num_outs=3,
+                norm_cfg=dict(type='BN2d', requires_grad=True),
+                act_cfg=dict(type='ReLU', inplace=True),
+                upsample_cfg=dict(mode='bilinear', align_corners=False)),
+            vtransform=dict(
+                type='LSSTransform',
+                in_channels=256,
+                out_channels=80,
+                image_size=[256, 704],
+                feature_size=[32, 88],
+                xbound=[-51.2, 51.2, 0.4],
+                ybound=[-51.2, 51.2, 0.4],
+                zbound=[-10.0, 10.0, 20.0],
+                dbound=[1.0, 60.0, 0.5],
+                downsample=2)),
+        infra=dict(
+            backbone=dict(
+                type='SwinTransformer',
+                embed_dims=96,
+                depths=[2, 2, 6, 2],
+                num_heads=[3, 6, 12, 24],
+                window_size=7,
+                mlp_ratio=4,
+                qkv_bias=True,
+                qk_scale=None,
+                drop_rate=0.0,
+                attn_drop_rate=0.0,
+                drop_path_rate=0.3,
+                patch_norm=True,
+                out_indices=[1, 2, 3],
+                with_cp=False,
+                convert_weights=True,
+                init_cfg=dict(
+                    type='Pretrained',
+                    checkpoint=
+                    'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'
+                )),
+            neck=dict(
+                type='GeneralizedLSSFPN',
+                in_channels=[192, 384, 768],
+                out_channels=256,
+                start_level=0,
+                num_outs=3,
+                norm_cfg=dict(type='BN2d', requires_grad=True),
+                act_cfg=dict(type='ReLU', inplace=True),
+                upsample_cfg=dict(mode='bilinear', align_corners=False)),
+            vtransform=dict(
+                type='LSSTransform',
+                in_channels=256,
+                out_channels=80,
+                image_size=[256, 704],
+                feature_size=[32, 88],
+                xbound=[-51.2, 51.2, 0.4],
+                ybound=[-51.2, 51.2, 0.4],
+                zbound=[-10.0, 10.0, 20.0],
+                dbound=[1.0, 60.0, 0.5],
+                downsample=2))),
+    fuser=dict(type='ConvFuser', in_channels=[80, 80], out_channels=80),
+    decoder=dict(
+        backbone=dict(
+            type='GeneralizedResNet',
+            in_channels=80,
+            blocks=[[2, 160, 2], [2, 320, 2], [2, 640, 1]]),
+        neck=dict(
+            type='LSSFPN',
+            in_indices=[-1, 0],
+            in_channels=[640, 160],
+            out_channels=256,
+            scale_factor=2)))
+optimizer = dict(
+    type='AdamW',
+    lr=0.0001,
+    weight_decay=0.01,
+    paramwise_cfg=dict(
+        custom_keys=dict(
+            absolute_pos_embed=dict(decay_mult=0),
+            relative_position_bias_table=dict(decay_mult=0))))
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+lr_config = dict(policy='cyclic')
+momentum_config = dict(policy='cyclic')
+run_dir = 'train_result_map_infra+onboard_camera_short'
+
+2024-12-14 20:53:48,938 - mmdet3d - INFO - Set random seed to 0, deterministic mode: False
+2024-12-14 20:53:55,734 - mmdet3d - INFO - load 349483 car database infos
+2024-12-14 20:53:55,734 - mmdet3d - INFO - load 157002 bicycle database infos
+2024-12-14 20:53:55,734 - mmdet3d - INFO - load 40210 motorcycle database infos
+2024-12-14 20:53:55,734 - mmdet3d - INFO - load 16943 vehicle.emergency.police database infos
+2024-12-14 20:53:56,595 - mmdet3d - INFO - After filter database:
+2024-12-14 20:53:56,597 - mmdet3d - INFO - load 170227 car database infos
+2024-12-14 20:53:56,598 - mmdet3d - INFO - load 157002 bicycle database infos
+2024-12-14 20:53:56,599 - mmdet3d - INFO - load 40210 motorcycle database infos
+2024-12-14 20:53:56,600 - mmdet3d - INFO - load 16943 vehicle.emergency.police database infos
+2024-12-14 20:54:01,138 - mmdet3d - INFO - Model:
+BEVFusion(
+  (encoders): ModuleDict(
+    (camera): ModuleDict(
+      (backbone): SwinTransformer(
+        (patch_embed): PatchEmbed(
+          (adap_padding): AdaptivePadding()
+          (projection): Conv2d(3, 96, kernel_size=(4, 4), stride=(4, 4))
+          (norm): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+        )
+        (drop_after_pos): Dropout(p=0.0, inplace=False)
+        (stages): ModuleList(
+          (0): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=96, out_features=288, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=96, out_features=96, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=96, out_features=384, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=384, out_features=96, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=96, out_features=288, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=96, out_features=96, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=96, out_features=384, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=384, out_features=96, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+            (downsample): PatchMerging(
+              (adap_padding): AdaptivePadding()
+              (sampler): Unfold(kernel_size=(2, 2), dilation=(1, 1), padding=(0, 0), stride=(2, 2))
+              (norm): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+              (reduction): Linear(in_features=384, out_features=192, bias=False)
+            )
+          )
+          (1): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=192, out_features=576, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=192, out_features=192, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=192, out_features=768, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=768, out_features=192, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=192, out_features=576, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=192, out_features=192, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=192, out_features=768, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=768, out_features=192, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+            (downsample): PatchMerging(
+              (adap_padding): AdaptivePadding()
+              (sampler): Unfold(kernel_size=(2, 2), dilation=(1, 1), padding=(0, 0), stride=(2, 2))
+              (norm): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+              (reduction): Linear(in_features=768, out_features=384, bias=False)
+            )
+          )
+          (2): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (2): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (3): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (4): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (5): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+            (downsample): PatchMerging(
+              (adap_padding): AdaptivePadding()
+              (sampler): Unfold(kernel_size=(2, 2), dilation=(1, 1), padding=(0, 0), stride=(2, 2))
+              (norm): LayerNorm((1536,), eps=1e-05, elementwise_affine=True)
+              (reduction): Linear(in_features=1536, out_features=768, bias=False)
+            )
+          )
+          (3): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=768, out_features=2304, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=768, out_features=768, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=768, out_features=3072, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=3072, out_features=768, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=768, out_features=2304, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=768, out_features=768, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=768, out_features=3072, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=3072, out_features=768, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+          )
+        )
+        (norm1): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+        (norm3): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+      )
+      init_cfg={'type': 'Pretrained', 'checkpoint': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'}
+      (neck): GeneralizedLSSFPN(
+        (lateral_convs): ModuleList(
+          (0): ConvModule(
+            (conv): Conv2d(448, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+          (1): ConvModule(
+            (conv): Conv2d(1152, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+        )
+        (fpn_convs): ModuleList(
+          (0): ConvModule(
+            (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+          (1): ConvModule(
+            (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+        )
+      )
+      (vtransform): LSSTransform(
+        (depthnet): Sequential(
+          (0): Conv2d(320, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(256, 198, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (dtransform): Sequential(
+          (0): Conv2d(1, 8, kernel_size=(1, 1), stride=(1, 1))
+          (1): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(8, 32, kernel_size=(5, 5), stride=(4, 4), padding=(2, 2))
+          (4): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(32, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
+          (7): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (8): ReLU(inplace=True)
+        )
+        (pyramid_depth_net): FCN(
+          (backbone): IntermediateLayerGetter(
+            (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+            (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+            (layer1): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                  (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+            (layer2): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                  (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (3): Bottleneck(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+            (layer3): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                  (1): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (3): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (4): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (5): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+            (layer4): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                  (1): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+                (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+                (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+          )
+          (classifier): FCNHead(
+            (0): Conv2d(2048, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU()
+            (3): Dropout(p=0.1, inplace=False)
+            (4): Conv2d(512, 21, kernel_size=(1, 1), stride=(1, 1))
+          )
+        )
+        (conv): Conv2d(21, 1, kernel_size=(1, 1), stride=(1, 1))
+        (downsample): Sequential(
+          (0): Conv2d(80, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(80, 80, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (4): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(80, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (7): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (8): ReLU(inplace=True)
+        )
+      )
+    )
+    (infra): ModuleDict(
+      (backbone): SwinTransformer(
+        (patch_embed): PatchEmbed(
+          (adap_padding): AdaptivePadding()
+          (projection): Conv2d(3, 96, kernel_size=(4, 4), stride=(4, 4))
+          (norm): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+        )
+        (drop_after_pos): Dropout(p=0.0, inplace=False)
+        (stages): ModuleList(
+          (0): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=96, out_features=288, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=96, out_features=96, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=96, out_features=384, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=384, out_features=96, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=96, out_features=288, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=96, out_features=96, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((96,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=96, out_features=384, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=384, out_features=96, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+            (downsample): PatchMerging(
+              (adap_padding): AdaptivePadding()
+              (sampler): Unfold(kernel_size=(2, 2), dilation=(1, 1), padding=(0, 0), stride=(2, 2))
+              (norm): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+              (reduction): Linear(in_features=384, out_features=192, bias=False)
+            )
+          )
+          (1): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=192, out_features=576, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=192, out_features=192, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=192, out_features=768, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=768, out_features=192, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=192, out_features=576, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=192, out_features=192, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=192, out_features=768, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=768, out_features=192, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+            (downsample): PatchMerging(
+              (adap_padding): AdaptivePadding()
+              (sampler): Unfold(kernel_size=(2, 2), dilation=(1, 1), padding=(0, 0), stride=(2, 2))
+              (norm): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+              (reduction): Linear(in_features=768, out_features=384, bias=False)
+            )
+          )
+          (2): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (2): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (3): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (4): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (5): SwinBlock(
+                (norm1): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=384, out_features=1152, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=384, out_features=384, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=384, out_features=1536, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=1536, out_features=384, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+            (downsample): PatchMerging(
+              (adap_padding): AdaptivePadding()
+              (sampler): Unfold(kernel_size=(2, 2), dilation=(1, 1), padding=(0, 0), stride=(2, 2))
+              (norm): LayerNorm((1536,), eps=1e-05, elementwise_affine=True)
+              (reduction): Linear(in_features=1536, out_features=768, bias=False)
+            )
+          )
+          (3): SwinBlockSequence(
+            (blocks): ModuleList(
+              (0): SwinBlock(
+                (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=768, out_features=2304, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=768, out_features=768, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=768, out_features=3072, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=3072, out_features=768, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+              (1): SwinBlock(
+                (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (attn): ShiftWindowMSA(
+                  (w_msa): WindowMSA(
+                    (qkv): Linear(in_features=768, out_features=2304, bias=True)
+                    (attn_drop): Dropout(p=0.0, inplace=False)
+                    (proj): Linear(in_features=768, out_features=768, bias=True)
+                    (proj_drop): Dropout(p=0.0, inplace=False)
+                    (softmax): Softmax(dim=-1)
+                  )
+                  (drop): DropPath()
+                )
+                (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+                (ffn): FFN(
+                  (activate): GELU()
+                  (layers): Sequential(
+                    (0): Sequential(
+                      (0): Linear(in_features=768, out_features=3072, bias=True)
+                      (1): GELU()
+                      (2): Dropout(p=0.0, inplace=False)
+                    )
+                    (1): Linear(in_features=3072, out_features=768, bias=True)
+                    (2): Dropout(p=0.0, inplace=False)
+                  )
+                  (dropout_layer): DropPath()
+                )
+              )
+            )
+          )
+        )
+        (norm1): LayerNorm((192,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((384,), eps=1e-05, elementwise_affine=True)
+        (norm3): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+      )
+      init_cfg={'type': 'Pretrained', 'checkpoint': 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'}
+      (neck): GeneralizedLSSFPN(
+        (lateral_convs): ModuleList(
+          (0): ConvModule(
+            (conv): Conv2d(448, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+          (1): ConvModule(
+            (conv): Conv2d(1152, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+        )
+        (fpn_convs): ModuleList(
+          (0): ConvModule(
+            (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+          (1): ConvModule(
+            (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (activate): ReLU(inplace=True)
+          )
+        )
+      )
+      (vtransform): LSSTransform(
+        (depthnet): Sequential(
+          (0): Conv2d(320, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(256, 198, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (dtransform): Sequential(
+          (0): Conv2d(1, 8, kernel_size=(1, 1), stride=(1, 1))
+          (1): BatchNorm2d(8, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(8, 32, kernel_size=(5, 5), stride=(4, 4), padding=(2, 2))
+          (4): BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(32, 64, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
+          (7): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (8): ReLU(inplace=True)
+        )
+        (pyramid_depth_net): FCN(
+          (backbone): IntermediateLayerGetter(
+            (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+            (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+            (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+            (layer1): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                  (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+            (layer2): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+                  (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (3): Bottleneck(
+                (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+            (layer3): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                  (1): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (3): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (4): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (5): Bottleneck(
+                (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+            (layer4): Sequential(
+              (0): Bottleneck(
+                (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+                (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+                (downsample): Sequential(
+                  (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                  (1): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                )
+              )
+              (1): Bottleneck(
+                (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+                (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+              (2): Bottleneck(
+                (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+                (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+                (relu): ReLU(inplace=True)
+              )
+            )
+          )
+          (classifier): FCNHead(
+            (0): Conv2d(2048, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (2): ReLU()
+            (3): Dropout(p=0.1, inplace=False)
+            (4): Conv2d(512, 21, kernel_size=(1, 1), stride=(1, 1))
+          )
+        )
+        (conv): Conv2d(21, 1, kernel_size=(1, 1), stride=(1, 1))
+        (downsample): Sequential(
+          (0): Conv2d(80, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (1): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (2): ReLU(inplace=True)
+          (3): Conv2d(80, 80, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (4): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (5): ReLU(inplace=True)
+          (6): Conv2d(80, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (7): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (8): ReLU(inplace=True)
+        )
+      )
+    )
+  )
+  (input_cross_transformer): TransformerEncoder(
+    (layers): ModuleList(
+      (0): EncoderBlock(
+        (self_attn): MultiheadAttention(
+          (qkv_proj): Linear(in_features=768, out_features=2304, bias=True)
+          (o_proj): Linear(in_features=768, out_features=768, bias=True)
+          (patch_in): PatchEmbedding(
+            (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+          (patch_pe): PatchEmbedding(
+            (proj): Conv2d(256, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+        )
+        (linear_net): Sequential(
+          (0): Linear(in_features=768, out_features=2304, bias=True)
+          (1): ReLU()
+          (2): Linear(in_features=2304, out_features=2304, bias=True)
+          (3): ReLU()
+          (4): Linear(in_features=2304, out_features=768, bias=True)
+        )
+        (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (patch): PatchEmbedding(
+          (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+        )
+      )
+      (1): EncoderBlock(
+        (self_attn): MultiheadAttention(
+          (qkv_proj): Linear(in_features=768, out_features=2304, bias=True)
+          (o_proj): Linear(in_features=768, out_features=768, bias=True)
+          (patch_in): PatchEmbedding(
+            (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+          (patch_pe): PatchEmbedding(
+            (proj): Conv2d(256, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+        )
+        (linear_net): Sequential(
+          (0): Linear(in_features=768, out_features=2304, bias=True)
+          (1): ReLU()
+          (2): Linear(in_features=2304, out_features=2304, bias=True)
+          (3): ReLU()
+          (4): Linear(in_features=2304, out_features=768, bias=True)
+        )
+        (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (patch): PatchEmbedding(
+          (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+        )
+      )
+      (2): EncoderBlock(
+        (self_attn): MultiheadAttention(
+          (qkv_proj): Linear(in_features=768, out_features=2304, bias=True)
+          (o_proj): Linear(in_features=768, out_features=768, bias=True)
+          (patch_in): PatchEmbedding(
+            (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+          (patch_pe): PatchEmbedding(
+            (proj): Conv2d(256, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+        )
+        (linear_net): Sequential(
+          (0): Linear(in_features=768, out_features=2304, bias=True)
+          (1): ReLU()
+          (2): Linear(in_features=2304, out_features=2304, bias=True)
+          (3): ReLU()
+          (4): Linear(in_features=2304, out_features=768, bias=True)
+        )
+        (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (patch): PatchEmbedding(
+          (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+        )
+      )
+    )
+  )
+  (input_cross_transformer_infra): TransformerEncoder(
+    (layers): ModuleList(
+      (0): EncoderBlock(
+        (self_attn): MultiheadAttention(
+          (qkv_proj): Linear(in_features=768, out_features=2304, bias=True)
+          (o_proj): Linear(in_features=768, out_features=768, bias=True)
+          (patch_in): PatchEmbedding(
+            (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+          (patch_pe): PatchEmbedding(
+            (proj): Conv2d(256, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+        )
+        (linear_net): Sequential(
+          (0): Linear(in_features=768, out_features=2304, bias=True)
+          (1): ReLU()
+          (2): Linear(in_features=2304, out_features=2304, bias=True)
+          (3): ReLU()
+          (4): Linear(in_features=2304, out_features=768, bias=True)
+        )
+        (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (patch): PatchEmbedding(
+          (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+        )
+      )
+      (1): EncoderBlock(
+        (self_attn): MultiheadAttention(
+          (qkv_proj): Linear(in_features=768, out_features=2304, bias=True)
+          (o_proj): Linear(in_features=768, out_features=768, bias=True)
+          (patch_in): PatchEmbedding(
+            (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+          (patch_pe): PatchEmbedding(
+            (proj): Conv2d(256, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+        )
+        (linear_net): Sequential(
+          (0): Linear(in_features=768, out_features=2304, bias=True)
+          (1): ReLU()
+          (2): Linear(in_features=2304, out_features=2304, bias=True)
+          (3): ReLU()
+          (4): Linear(in_features=2304, out_features=768, bias=True)
+        )
+        (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (patch): PatchEmbedding(
+          (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+        )
+      )
+      (2): EncoderBlock(
+        (self_attn): MultiheadAttention(
+          (qkv_proj): Linear(in_features=768, out_features=2304, bias=True)
+          (o_proj): Linear(in_features=768, out_features=768, bias=True)
+          (patch_in): PatchEmbedding(
+            (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+          (patch_pe): PatchEmbedding(
+            (proj): Conv2d(256, 768, kernel_size=(16, 16), stride=(16, 16))
+          )
+        )
+        (linear_net): Sequential(
+          (0): Linear(in_features=768, out_features=2304, bias=True)
+          (1): ReLU()
+          (2): Linear(in_features=2304, out_features=2304, bias=True)
+          (3): ReLU()
+          (4): Linear(in_features=2304, out_features=768, bias=True)
+        )
+        (norm1): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (norm2): LayerNorm((768,), eps=1e-05, elementwise_affine=True)
+        (dropout): Dropout(p=0.3, inplace=False)
+        (patch): PatchEmbedding(
+          (proj): Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16))
+        )
+      )
+    )
+  )
+  (seg_model): MCnet(
+    (model): Sequential(
+      (0): Focus(
+        (conv): Conv(
+          (conv): Conv2d(12, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+      )
+      (1): Conv(
+        (conv): Conv2d(32, 64, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (2): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(64, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(64, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (3): Conv(
+        (conv): Conv2d(64, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (4): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(128, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(128, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+          (1): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+          (2): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (5): Conv(
+        (conv): Conv2d(128, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (6): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+          (1): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+          (2): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (7): Conv(
+        (conv): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(512, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (8): SPP(
+        (cv1): Conv(
+          (conv): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv(
+          (conv): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(512, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (m): ModuleList(
+          (0): MaxPool2d(kernel_size=5, stride=1, padding=2, dilation=1, ceil_mode=False)
+          (1): MaxPool2d(kernel_size=9, stride=1, padding=4, dilation=1, ceil_mode=False)
+          (2): MaxPool2d(kernel_size=13, stride=1, padding=6, dilation=1, ceil_mode=False)
+        )
+      )
+      (9): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(512, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(512, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (10): Conv(
+        (conv): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (11): Upsample(scale_factor=2.0, mode=nearest)
+      (12): Concat()
+      (13): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (14): Conv(
+        (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (15): Upsample(scale_factor=2.0, mode=nearest)
+      (16): Concat()
+      (17): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (18): Conv(
+        (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (19): Concat()
+      (20): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (21): Conv(
+        (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (22): Concat()
+      (23): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(512, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(512, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(256, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(256, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (24): Detect(
+        (m): ModuleList(
+          (0): Conv2d(128, 18, kernel_size=(1, 1), stride=(1, 1))
+          (1): Conv2d(256, 18, kernel_size=(1, 1), stride=(1, 1))
+          (2): Conv2d(512, 18, kernel_size=(1, 1), stride=(1, 1))
+        )
+      )
+      (25): Conv(
+        (conv): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (26): Upsample(scale_factor=2.0, mode=nearest)
+      (27): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(128, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(128, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (28): Conv(
+        (conv): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (29): Upsample(scale_factor=2.0, mode=nearest)
+      (30): Conv(
+        (conv): Conv2d(32, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(16, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (31): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(16, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(4, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(16, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(4, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(8, 8, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(8, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(8, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(4, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(4, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(4, 4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(4, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (32): Upsample(scale_factor=2.0, mode=nearest)
+      (33): Conv(
+        (conv): Conv2d(8, 2, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(2, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (34): Conv(
+        (conv): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(128, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (35): Upsample(scale_factor=2.0, mode=nearest)
+      (36): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(128, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(128, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(64, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(32, 32, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (37): Conv(
+        (conv): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(32, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (38): Upsample(scale_factor=2.0, mode=nearest)
+      (39): Conv(
+        (conv): Conv2d(32, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(16, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+      (40): BottleneckCSP(
+        (cv1): Conv(
+          (conv): Conv2d(16, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(4, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (cv2): Conv2d(16, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv3): Conv2d(4, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (cv4): Conv(
+          (conv): Conv2d(8, 8, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (bn): BatchNorm2d(8, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+          (act): Hardswish()
+        )
+        (bn): BatchNorm2d(8, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): LeakyReLU(negative_slope=0.1, inplace=True)
+        (m): Sequential(
+          (0): Bottleneck(
+            (cv1): Conv(
+              (conv): Conv2d(4, 4, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (bn): BatchNorm2d(4, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+            (cv2): Conv(
+              (conv): Conv2d(4, 4, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (bn): BatchNorm2d(4, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+              (act): Hardswish()
+            )
+          )
+        )
+      )
+      (41): Upsample(scale_factor=2.0, mode=nearest)
+      (42): Conv(
+        (conv): Conv2d(8, 2, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (bn): BatchNorm2d(2, eps=0.001, momentum=0.03, affine=True, track_running_stats=True)
+        (act): Hardswish()
+      )
+    )
+  )
+  (fuser): ConvFuser(
+    (0): Conv2d(160, 80, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+    (1): BatchNorm2d(80, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    (2): ReLU(inplace=True)
+  )
+  (decoder): ModuleDict(
+    (backbone): GeneralizedResNet(
+      (0): Sequential(
+        (0): BasicBlock(
+          (conv1): Conv2d(80, 160, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (bn1): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (relu): ReLU(inplace=True)
+          (conv2): Conv2d(160, 160, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn2): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (downsample): Sequential(
+            (0): Conv2d(80, 160, kernel_size=(1, 1), stride=(2, 2), bias=False)
+            (1): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          )
+        )
+        (1): BasicBlock(
+          (conv1): Conv2d(160, 160, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn1): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (relu): ReLU(inplace=True)
+          (conv2): Conv2d(160, 160, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn2): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (1): Sequential(
+        (0): BasicBlock(
+          (conv1): Conv2d(160, 320, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+          (bn1): BatchNorm2d(320, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (relu): ReLU(inplace=True)
+          (conv2): Conv2d(320, 320, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn2): BatchNorm2d(320, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (downsample): Sequential(
+            (0): Conv2d(160, 320, kernel_size=(1, 1), stride=(2, 2), bias=False)
+            (1): BatchNorm2d(320, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          )
+        )
+        (1): BasicBlock(
+          (conv1): Conv2d(320, 320, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn1): BatchNorm2d(320, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (relu): ReLU(inplace=True)
+          (conv2): Conv2d(320, 320, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn2): BatchNorm2d(320, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (2): Sequential(
+        (0): BasicBlock(
+          (conv1): Conv2d(320, 640, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn1): BatchNorm2d(640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (relu): ReLU(inplace=True)
+          (conv2): Conv2d(640, 640, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn2): BatchNorm2d(640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (downsample): Sequential(
+            (0): Conv2d(320, 640, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (1): BatchNorm2d(640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          )
+        )
+        (1): BasicBlock(
+          (conv1): Conv2d(640, 640, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn1): BatchNorm2d(640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (relu): ReLU(inplace=True)
+          (conv2): Conv2d(640, 640, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+          (bn2): BatchNorm2d(640, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+    )
+    (neck): LSSFPN(
+      (fuse): Sequential(
+        (0): Conv2d(800, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (5): ReLU(inplace=True)
+      )
+      (upsample): Sequential(
+        (0): Upsample(scale_factor=2.0, mode=bilinear)
+        (1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (3): ReLU(inplace=True)
+      )
+    )
+  )
+  (heads): ModuleDict(
+    (map): BEVSegmentationHead(
+      (transform): BEVGridTransform()
+      (classifier): Sequential(
+        (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (2): ReLU(inplace=True)
+        (3): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+        (4): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (5): ReLU(inplace=True)
+        (6): Conv2d(256, 3, kernel_size=(1, 1), stride=(1, 1))
+      )
+    )
+  )
+)
+2024-12-14 20:54:04,984 - mmdet3d - INFO - Start running, host: jmeng18@sg017, work_dir: /home/jmeng18/bev_fusion/bevfusion-beliv/train_result_map_infra+onboard_camera_short
+2024-12-14 20:54:04,984 - mmdet3d - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) CyclicLrUpdaterHook                
+(HIGH        ) CyclicMomentumUpdaterHook          
+(ABOVE_NORMAL) Fp16OptimizerHook                  
+(NORMAL      ) CheckpointHook                     
+(NORMAL      ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) CyclicLrUpdaterHook                
+(HIGH        ) CyclicMomentumUpdaterHook          
+(NORMAL      ) DistSamplerSeedHook                
+(NORMAL      ) DistEvalHook                       
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) CyclicLrUpdaterHook                
+(HIGH        ) CyclicMomentumUpdaterHook          
+(NORMAL      ) DistEvalHook                       
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_train_iter:
+(ABOVE_NORMAL) Fp16OptimizerHook                  
+(NORMAL      ) CheckpointHook                     
+(NORMAL      ) DistEvalHook                       
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) CheckpointHook                     
+(NORMAL      ) DistEvalHook                       
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) DistSamplerSeedHook                
+(LOW         ) IterTimerHook                      
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+before_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(LOW         ) IterTimerHook                      
+ -------------------- 
+after_val_epoch:
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+after_run:
+(VERY_LOW    ) TextLoggerHook                     
+(VERY_LOW    ) TensorboardLoggerHook              
+ -------------------- 
+2024-12-14 20:54:04,984 - mmdet3d - INFO - workflow: [('train', 1)], max: 20 epochs
+2024-12-14 20:54:04,991 - mmdet3d - INFO - Checkpoints will be saved to /home/jmeng18/bev_fusion/bevfusion-beliv/train_result_map_infra+onboard_camera_short by HardDiskBackend.
+2024-12-14 20:56:19,464 - mmdet3d - INFO - Epoch [1][50/8000]	lr: 1.000e-04, eta: 4 days, 23:05:30, time: 2.680, data_time: 0.166, memory: 26738, loss/map/drivable_area/focal: 6.3024, loss/map/ped_crossing/focal: 6.2356, loss/map/walkway/focal: 6.2539, loss: 18.7918, grad_norm: nan
+2024-12-14 20:58:39,530 - mmdet3d - INFO - Epoch [1][100/8000]	lr: 1.000e-04, eta: 5 days, 1:44:22, time: 2.801, data_time: 0.160, memory: 26738, loss/map/drivable_area/focal: 1.9154, loss/map/ped_crossing/focal: 1.8541, loss/map/walkway/focal: 1.8812, loss: 5.6506, grad_norm: 28.7791
+2024-12-14 21:02:53,558 - mmdet3d - INFO - Epoch [1][150/8000]	lr: 1.000e-04, eta: 6 days, 12:19:50, time: 5.081, data_time: 1.038, memory: 26843, loss/map/drivable_area/focal: 1.6740, loss/map/ped_crossing/focal: 1.6068, loss/map/walkway/focal: 1.6402, loss: 4.9211, grad_norm: 24.7054
+2024-12-14 21:07:10,251 - mmdet3d - INFO - Epoch [1][200/8000]	lr: 1.000e-04, eta: 7 days, 6:10:51, time: 5.134, data_time: 1.075, memory: 26843, loss/map/drivable_area/focal: 1.4935, loss/map/ped_crossing/focal: 1.4352, loss/map/walkway/focal: 1.4642, loss: 4.3929, grad_norm: 23.4120
+2024-12-14 21:11:22,275 - mmdet3d - INFO - Epoch [1][250/8000]	lr: 1.000e-04, eta: 7 days, 16:02:09, time: 5.041, data_time: 0.900, memory: 26843, loss/map/drivable_area/focal: 1.5209, loss/map/ped_crossing/focal: 1.4810, loss/map/walkway/focal: 1.5027, loss: 4.5046, grad_norm: 22.5668
+2024-12-14 21:15:37,788 - mmdet3d - INFO - Epoch [1][300/8000]	lr: 1.000e-04, eta: 7 days, 23:05:51, time: 5.110, data_time: 1.063, memory: 26843, loss/map/drivable_area/focal: 1.4384, loss/map/ped_crossing/focal: 1.3979, loss/map/walkway/focal: 1.4225, loss: 4.2588, grad_norm: 21.0717
+2024-12-14 21:19:56,761 - mmdet3d - INFO - Epoch [1][350/8000]	lr: 1.001e-04, eta: 8 days, 4:33:36, time: 5.179, data_time: 1.164, memory: 26843, loss/map/drivable_area/focal: 1.3886, loss/map/ped_crossing/focal: 1.3473, loss/map/walkway/focal: 1.3716, loss: 4.1075, grad_norm: 21.8265
+2024-12-14 21:24:04,964 - mmdet3d - INFO - Epoch [1][400/8000]	lr: 1.001e-04, eta: 8 days, 7:26:42, time: 4.964, data_time: 0.943, memory: 26857, loss/map/drivable_area/focal: 1.4104, loss/map/ped_crossing/focal: 1.3709, loss/map/walkway/focal: 1.3953, loss: 4.1767, grad_norm: 21.6111
+2024-12-14 21:28:26,658 - mmdet3d - INFO - Epoch [1][450/8000]	lr: 1.001e-04, eta: 8 days, 11:00:09, time: 5.234, data_time: 1.210, memory: 26857, loss/map/drivable_area/focal: 1.4135, loss/map/ped_crossing/focal: 1.3729, loss/map/walkway/focal: 1.3996, loss: 4.1861, grad_norm: 21.3441
+2024-12-14 21:32:45,896 - mmdet3d - INFO - Epoch [1][500/8000]	lr: 1.001e-04, eta: 8 days, 13:36:59, time: 5.185, data_time: 1.051, memory: 26857, loss/map/drivable_area/focal: 1.3507, loss/map/ped_crossing/focal: 1.3170, loss/map/walkway/focal: 1.3410, loss: 4.0088, grad_norm: 20.5838
+2024-12-14 21:36:59,810 - mmdet3d - INFO - Epoch [1][550/8000]	lr: 1.002e-04, eta: 8 days, 15:18:47, time: 5.078, data_time: 1.048, memory: 26878, loss/map/drivable_area/focal: 1.4181, loss/map/ped_crossing/focal: 1.3774, loss/map/walkway/focal: 1.4021, loss: 4.1977, grad_norm: 20.7004
+2024-12-14 21:41:10,988 - mmdet3d - INFO - Epoch [1][600/8000]	lr: 1.002e-04, eta: 8 days, 16:30:34, time: 5.023, data_time: 0.945, memory: 26878, loss/map/drivable_area/focal: 1.3084, loss/map/ped_crossing/focal: 1.2731, loss/map/walkway/focal: 1.2988, loss: 3.8803, grad_norm: 18.5092
+2024-12-14 21:45:19,406 - mmdet3d - INFO - Epoch [1][650/8000]	lr: 1.002e-04, eta: 8 days, 17:19:48, time: 4.969, data_time: 0.979, memory: 26878, loss/map/drivable_area/focal: 1.2859, loss/map/ped_crossing/focal: 1.2589, loss/map/walkway/focal: 1.2801, loss: 3.8249, grad_norm: 19.8043
+2024-12-14 21:49:26,444 - mmdet3d - INFO - Epoch [1][700/8000]	lr: 1.003e-04, eta: 8 days, 17:56:00, time: 4.941, data_time: 1.000, memory: 26878, loss/map/drivable_area/focal: 1.3109, loss/map/ped_crossing/focal: 1.2805, loss/map/walkway/focal: 1.3026, loss: 3.8940, grad_norm: 20.7781
+2024-12-14 21:53:42,489 - mmdet3d - INFO - Epoch [1][750/8000]	lr: 1.003e-04, eta: 8 days, 18:58:41, time: 5.121, data_time: 1.129, memory: 26878, loss/map/drivable_area/focal: 1.1634, loss/map/ped_crossing/focal: 1.1417, loss/map/walkway/focal: 1.1634, loss: 3.4685, grad_norm: 18.4774
+2024-12-14 21:58:00,578 - mmdet3d - INFO - Epoch [1][800/8000]	lr: 1.003e-04, eta: 8 days, 19:59:46, time: 5.162, data_time: 1.134, memory: 26878, loss/map/drivable_area/focal: 1.2269, loss/map/ped_crossing/focal: 1.1992, loss/map/walkway/focal: 1.2231, loss: 3.6491, grad_norm: 18.5398
+2024-12-14 22:02:15,043 - mmdet3d - INFO - Epoch [1][850/8000]	lr: 1.004e-04, eta: 8 days, 20:41:52, time: 5.089, data_time: 0.893, memory: 26878, loss/map/drivable_area/focal: 1.2152, loss/map/ped_crossing/focal: 1.1926, loss/map/walkway/focal: 1.2119, loss: 3.6196, grad_norm: 20.3396
+2024-12-14 22:06:28,265 - mmdet3d - INFO - Epoch [1][900/8000]	lr: 1.004e-04, eta: 8 days, 21:15:09, time: 5.064, data_time: 1.077, memory: 26878, loss/map/drivable_area/focal: 1.2987, loss/map/ped_crossing/focal: 1.2749, loss/map/walkway/focal: 1.2961, loss: 3.8697, grad_norm: 19.8865
+2024-12-14 22:10:48,544 - mmdet3d - INFO - Epoch [1][950/8000]	lr: 1.005e-04, eta: 8 days, 22:04:11, time: 5.205, data_time: 1.100, memory: 26878, loss/map/drivable_area/focal: 1.2608, loss/map/ped_crossing/focal: 1.2325, loss/map/walkway/focal: 1.2546, loss: 3.7479, grad_norm: 19.8277
+2024-12-14 22:15:07,455 - mmdet3d - INFO - Epoch [1][1000/8000]	lr: 1.005e-04, eta: 8 days, 22:44:14, time: 5.178, data_time: 1.120, memory: 26878, loss/map/drivable_area/focal: 1.2936, loss/map/ped_crossing/focal: 1.2655, loss/map/walkway/focal: 1.2846, loss: 3.8437, grad_norm: 20.5562
+2024-12-14 22:19:24,063 - mmdet3d - INFO - Epoch [1][1050/8000]	lr: 1.006e-04, eta: 8 days, 23:14:17, time: 5.132, data_time: 1.042, memory: 26878, loss/map/drivable_area/focal: 1.2870, loss/map/ped_crossing/focal: 1.2731, loss/map/walkway/focal: 1.2905, loss: 3.8507, grad_norm: 19.5132
+2024-12-14 22:23:33,929 - mmdet3d - INFO - Epoch [1][1100/8000]	lr: 1.007e-04, eta: 8 days, 23:24:58, time: 4.997, data_time: 1.118, memory: 26878, loss/map/drivable_area/focal: 1.2262, loss/map/ped_crossing/focal: 1.1920, loss/map/walkway/focal: 1.2161, loss: 3.6343, grad_norm: 18.2492
+2024-12-14 22:27:51,538 - mmdet3d - INFO - Epoch [1][1150/8000]	lr: 1.007e-04, eta: 8 days, 23:52:10, time: 5.152, data_time: 1.159, memory: 26878, loss/map/drivable_area/focal: 1.1516, loss/map/ped_crossing/focal: 1.1277, loss/map/walkway/focal: 1.1491, loss: 3.4284, grad_norm: 17.2497
+2024-12-14 22:32:11,244 - mmdet3d - INFO - Epoch [1][1200/8000]	lr: 1.008e-04, eta: 9 days, 0:21:23, time: 5.194, data_time: 1.200, memory: 26878, loss/map/drivable_area/focal: 1.2607, loss/map/ped_crossing/focal: 1.2420, loss/map/walkway/focal: 1.2585, loss: 3.7611, grad_norm: 18.9398
+2024-12-14 22:36:30,918 - mmdet3d - INFO - Epoch [1][1250/8000]	lr: 1.008e-04, eta: 9 days, 0:47:51, time: 5.194, data_time: 1.163, memory: 26878, loss/map/drivable_area/focal: 1.1880, loss/map/ped_crossing/focal: 1.1604, loss/map/walkway/focal: 1.1812, loss: 3.5296, grad_norm: 18.9930
+2024-12-14 22:40:48,707 - mmdet3d - INFO - Epoch [1][1300/8000]	lr: 1.009e-04, eta: 9 days, 1:08:06, time: 5.156, data_time: 1.071, memory: 26878, loss/map/drivable_area/focal: 1.2184, loss/map/ped_crossing/focal: 1.1924, loss/map/walkway/focal: 1.2170, loss: 3.6278, grad_norm: 19.0982
+2024-12-14 22:45:12,866 - mmdet3d - INFO - Epoch [1][1350/8000]	lr: 1.010e-04, eta: 9 days, 1:39:01, time: 5.283, data_time: 1.324, memory: 26878, loss/map/drivable_area/focal: 1.1514, loss/map/ped_crossing/focal: 1.1360, loss/map/walkway/focal: 1.1517, loss: 3.4390, grad_norm: 18.6871
+2024-12-14 22:49:29,209 - mmdet3d - INFO - Epoch [1][1400/8000]	lr: 1.011e-04, eta: 9 days, 1:52:39, time: 5.127, data_time: 1.104, memory: 26878, loss/map/drivable_area/focal: 1.2053, loss/map/ped_crossing/focal: 1.1898, loss/map/walkway/focal: 1.2077, loss: 3.6028, grad_norm: 18.5438
+2024-12-14 22:53:57,544 - mmdet3d - INFO - Epoch [1][1450/8000]	lr: 1.011e-04, eta: 9 days, 2:26:55, time: 5.367, data_time: 1.323, memory: 26878, loss/map/drivable_area/focal: 1.1310, loss/map/ped_crossing/focal: 1.1021, loss/map/walkway/focal: 1.1241, loss: 3.3572, grad_norm: 18.7147
+2024-12-14 22:58:17,525 - mmdet3d - INFO - Epoch [1][1500/8000]	lr: 1.012e-04, eta: 9 days, 2:43:52, time: 5.200, data_time: 1.154, memory: 26878, loss/map/drivable_area/focal: 1.0488, loss/map/ped_crossing/focal: 1.0274, loss/map/walkway/focal: 1.0489, loss: 3.1251, grad_norm: 16.4103
+2024-12-14 23:02:34,265 - mmdet3d - INFO - Epoch [1][1550/8000]	lr: 1.013e-04, eta: 9 days, 2:53:56, time: 5.135, data_time: 1.176, memory: 26878, loss/map/drivable_area/focal: 1.0946, loss/map/ped_crossing/focal: 1.0727, loss/map/walkway/focal: 1.0931, loss: 3.2604, grad_norm: 17.6638
+2024-12-14 23:06:52,058 - mmdet3d - INFO - Epoch [1][1600/8000]	lr: 1.014e-04, eta: 9 days, 3:04:51, time: 5.156, data_time: 1.353, memory: 26878, loss/map/drivable_area/focal: 1.0357, loss/map/ped_crossing/focal: 1.0160, loss/map/walkway/focal: 1.0309, loss: 3.0827, grad_norm: 16.9164
+2024-12-14 23:11:14,976 - mmdet3d - INFO - Epoch [1][1650/8000]	lr: 1.015e-04, eta: 9 days, 3:22:59, time: 5.258, data_time: 1.377, memory: 26878, loss/map/drivable_area/focal: 1.0866, loss/map/ped_crossing/focal: 1.0649, loss/map/walkway/focal: 1.0869, loss: 3.2384, grad_norm: 16.6151
+2024-12-14 23:15:33,692 - mmdet3d - INFO - Epoch [1][1700/8000]	lr: 1.016e-04, eta: 9 days, 3:33:22, time: 5.175, data_time: 1.298, memory: 26878, loss/map/drivable_area/focal: 1.0672, loss/map/ped_crossing/focal: 1.0519, loss/map/walkway/focal: 1.0681, loss: 3.1872, grad_norm: 18.5879
+2024-12-14 23:19:54,283 - mmdet3d - INFO - Epoch [1][1750/8000]	lr: 1.017e-04, eta: 9 days, 3:45:41, time: 5.212, data_time: 1.096, memory: 26878, loss/map/drivable_area/focal: 1.1341, loss/map/ped_crossing/focal: 1.1182, loss/map/walkway/focal: 1.1363, loss: 3.3886, grad_norm: 17.6890
+2024-12-14 23:24:14,118 - mmdet3d - INFO - Epoch [1][1800/8000]	lr: 1.018e-04, eta: 9 days, 3:55:59, time: 5.197, data_time: 1.110, memory: 26878, loss/map/drivable_area/focal: 1.0841, loss/map/ped_crossing/focal: 1.0655, loss/map/walkway/focal: 1.0853, loss: 3.2348, grad_norm: 17.9804
+2024-12-14 23:28:30,440 - mmdet3d - INFO - Epoch [1][1850/8000]	lr: 1.019e-04, eta: 9 days, 4:00:28, time: 5.126, data_time: 1.062, memory: 26878, loss/map/drivable_area/focal: 1.0448, loss/map/ped_crossing/focal: 1.0285, loss/map/walkway/focal: 1.0501, loss: 3.1233, grad_norm: 17.2869
+2024-12-14 23:32:44,601 - mmdet3d - INFO - Epoch [1][1900/8000]	lr: 1.020e-04, eta: 9 days, 4:01:30, time: 5.083, data_time: 1.111, memory: 26878, loss/map/drivable_area/focal: 1.0790, loss/map/ped_crossing/focal: 1.0636, loss/map/walkway/focal: 1.0789, loss: 3.2215, grad_norm: 17.4474
+2024-12-14 23:37:03,926 - mmdet3d - INFO - Epoch [1][1950/8000]	lr: 1.021e-04, eta: 9 days, 4:09:15, time: 5.187, data_time: 1.197, memory: 26878, loss/map/drivable_area/focal: 1.1360, loss/map/ped_crossing/focal: 1.1277, loss/map/walkway/focal: 1.1430, loss: 3.4067, grad_norm: 16.6807
+2024-12-14 23:41:30,242 - mmdet3d - INFO - Epoch [1][2000/8000]	lr: 1.022e-04, eta: 9 days, 4:25:35, time: 5.326, data_time: 1.262, memory: 26878, loss/map/drivable_area/focal: 1.0708, loss/map/ped_crossing/focal: 1.0507, loss/map/walkway/focal: 1.0731, loss: 3.1945, grad_norm: 16.7801
+2024-12-14 23:45:52,805 - mmdet3d - INFO - Epoch [1][2050/8000]	lr: 1.023e-04, eta: 9 days, 4:36:06, time: 5.251, data_time: 1.304, memory: 26878, loss/map/drivable_area/focal: 1.0245, loss/map/ped_crossing/focal: 1.0092, loss/map/walkway/focal: 1.0264, loss: 3.0601, grad_norm: nan
+2024-12-14 23:50:06,723 - mmdet3d - INFO - Epoch [1][2100/8000]	lr: 1.024e-04, eta: 9 days, 4:35:04, time: 5.078, data_time: 1.124, memory: 26878, loss/map/drivable_area/focal: 1.0683, loss/map/ped_crossing/focal: 1.0492, loss/map/walkway/focal: 1.0692, loss: 3.1866, grad_norm: 16.2362
+2024-12-14 23:54:24,799 - mmdet3d - INFO - Epoch [1][2150/8000]	lr: 1.025e-04, eta: 9 days, 4:38:58, time: 5.162, data_time: 1.160, memory: 26878, loss/map/drivable_area/focal: 1.0517, loss/map/ped_crossing/focal: 1.0382, loss/map/walkway/focal: 1.0498, loss: 3.1397, grad_norm: 15.5424
+2024-12-14 23:58:40,043 - mmdet3d - INFO - Epoch [1][2200/8000]	lr: 1.026e-04, eta: 9 days, 4:39:07, time: 5.105, data_time: 1.069, memory: 26878, loss/map/drivable_area/focal: 0.9993, loss/map/ped_crossing/focal: 0.9853, loss/map/walkway/focal: 0.9979, loss: 2.9825, grad_norm: 14.0510
+2024-12-15 00:02:43,141 - mmdet3d - INFO - Epoch [1][2250/8000]	lr: 1.027e-04, eta: 9 days, 4:24:53, time: 4.862, data_time: 0.878, memory: 26878, loss/map/drivable_area/focal: 1.0391, loss/map/ped_crossing/focal: 1.0248, loss/map/walkway/focal: 1.0411, loss: 3.1050, grad_norm: 16.8186
+2024-12-15 00:06:59,986 - mmdet3d - INFO - Epoch [1][2300/8000]	lr: 1.029e-04, eta: 9 days, 4:26:48, time: 5.137, data_time: 1.241, memory: 26878, loss/map/drivable_area/focal: 1.0115, loss/map/ped_crossing/focal: 0.9908, loss/map/walkway/focal: 1.0120, loss: 3.0143, grad_norm: 16.8002
+2024-12-15 00:11:28,836 - mmdet3d - INFO - Epoch [1][2350/8000]	lr: 1.030e-04, eta: 9 days, 4:41:52, time: 5.377, data_time: 1.188, memory: 26878, loss/map/drivable_area/focal: 1.0707, loss/map/ped_crossing/focal: 1.0548, loss/map/walkway/focal: 1.0728, loss: 3.1983, grad_norm: 18.1039
+2024-12-15 00:15:45,310 - mmdet3d - INFO - Epoch [1][2400/8000]	lr: 1.031e-04, eta: 9 days, 4:42:34, time: 5.129, data_time: 1.013, memory: 26878, loss/map/drivable_area/focal: 1.1141, loss/map/ped_crossing/focal: 1.1028, loss/map/walkway/focal: 1.1229, loss: 3.3398, grad_norm: 17.0665
+2024-12-15 00:20:16,133 - mmdet3d - INFO - Epoch [1][2450/8000]	lr: 1.032e-04, eta: 9 days, 4:58:28, time: 5.417, data_time: 1.374, memory: 26878, loss/map/drivable_area/focal: 1.0914, loss/map/ped_crossing/focal: 1.0751, loss/map/walkway/focal: 1.0931, loss: 3.2596, grad_norm: 18.8858
+2024-12-15 00:24:31,174 - mmdet3d - INFO - Epoch [1][2500/8000]	lr: 1.034e-04, eta: 9 days, 4:56:58, time: 5.101, data_time: 1.206, memory: 26878, loss/map/drivable_area/focal: 1.0754, loss/map/ped_crossing/focal: 1.0632, loss/map/walkway/focal: 1.0771, loss: 3.2157, grad_norm: 17.0733
+2024-12-15 00:28:49,247 - mmdet3d - INFO - Epoch [1][2550/8000]	lr: 1.035e-04, eta: 9 days, 4:58:27, time: 5.161, data_time: 1.094, memory: 26878, loss/map/drivable_area/focal: 0.9904, loss/map/ped_crossing/focal: 0.9813, loss/map/walkway/focal: 0.9945, loss: 2.9662, grad_norm: 16.1806
+2024-12-15 00:32:58,799 - mmdet3d - INFO - Epoch [1][2600/8000]	lr: 1.037e-04, eta: 9 days, 4:51:10, time: 4.991, data_time: 0.925, memory: 26878, loss/map/drivable_area/focal: 1.0353, loss/map/ped_crossing/focal: 1.0223, loss/map/walkway/focal: 1.0376, loss: 3.0952, grad_norm: 16.2876
+2024-12-15 00:37:14,228 - mmdet3d - INFO - Epoch [1][2650/8000]	lr: 1.038e-04, eta: 9 days, 4:49:47, time: 5.109, data_time: 1.023, memory: 26878, loss/map/drivable_area/focal: 0.9475, loss/map/ped_crossing/focal: 0.9305, loss/map/walkway/focal: 0.9498, loss: 2.8278, grad_norm: 14.2499
+2024-12-15 00:41:30,770 - mmdet3d - INFO - Epoch [1][2700/8000]	lr: 1.039e-04, eta: 9 days, 4:49:23, time: 5.131, data_time: 1.104, memory: 26878, loss/map/drivable_area/focal: 0.9524, loss/map/ped_crossing/focal: 0.9431, loss/map/walkway/focal: 0.9581, loss: 2.8536, grad_norm: 16.8360
+2024-12-15 00:45:41,138 - mmdet3d - INFO - Epoch [1][2750/8000]	lr: 1.041e-04, eta: 9 days, 4:42:58, time: 5.007, data_time: 1.077, memory: 26878, loss/map/drivable_area/focal: 1.0070, loss/map/ped_crossing/focal: 1.0006, loss/map/walkway/focal: 1.0144, loss: 3.0220, grad_norm: 17.0462
+2024-12-15 00:49:43,168 - mmdet3d - INFO - Epoch [1][2800/8000]	lr: 1.042e-04, eta: 9 days, 4:28:49, time: 4.841, data_time: 0.846, memory: 26878, loss/map/drivable_area/focal: 0.9381, loss/map/ped_crossing/focal: 0.9263, loss/map/walkway/focal: 0.9431, loss: 2.8075, grad_norm: 15.9240
+2024-12-15 00:53:53,316 - mmdet3d - INFO - Epoch [1][2850/8000]	lr: 1.044e-04, eta: 9 days, 4:22:28, time: 5.003, data_time: 0.964, memory: 26878, loss/map/drivable_area/focal: 0.9792, loss/map/ped_crossing/focal: 0.9680, loss/map/walkway/focal: 0.9844, loss: 2.9315, grad_norm: 16.6100
+2024-12-15 00:58:12,219 - mmdet3d - INFO - Epoch [1][2900/8000]	lr: 1.045e-04, eta: 9 days, 4:24:08, time: 5.178, data_time: 1.038, memory: 26878, loss/map/drivable_area/focal: 0.9613, loss/map/ped_crossing/focal: 0.9507, loss/map/walkway/focal: 0.9665, loss: 2.8786, grad_norm: 16.5861
+2024-12-15 01:02:24,075 - mmdet3d - INFO - Epoch [1][2950/8000]	lr: 1.047e-04, eta: 9 days, 4:19:20, time: 5.037, data_time: 0.926, memory: 26878, loss/map/drivable_area/focal: 0.9919, loss/map/ped_crossing/focal: 0.9866, loss/map/walkway/focal: 1.0023, loss: 2.9809, grad_norm: 16.5535
+2024-12-15 01:06:38,908 - mmdet3d - INFO - Epoch [1][3000/8000]	lr: 1.049e-04, eta: 9 days, 4:17:08, time: 5.097, data_time: 1.190, memory: 26878, loss/map/drivable_area/focal: 1.0701, loss/map/ped_crossing/focal: 1.0644, loss/map/walkway/focal: 1.0766, loss: 3.2111, grad_norm: 17.6582
+2024-12-15 01:10:54,513 - mmdet3d - INFO - Epoch [1][3050/8000]	lr: 1.050e-04, eta: 9 days, 4:15:32, time: 5.112, data_time: 1.148, memory: 26878, loss/map/drivable_area/focal: 1.0417, loss/map/ped_crossing/focal: 1.0280, loss/map/walkway/focal: 1.0463, loss: 3.1160, grad_norm: 17.6921
+2024-12-15 01:15:04,405 - mmdet3d - INFO - Epoch [1][3100/8000]	lr: 1.052e-04, eta: 9 days, 4:09:02, time: 4.998, data_time: 1.115, memory: 26878, loss/map/drivable_area/focal: 0.8964, loss/map/ped_crossing/focal: 0.8842, loss/map/walkway/focal: 0.9016, loss: 2.6822, grad_norm: 15.3362
+2024-12-15 01:19:16,014 - mmdet3d - INFO - Epoch [1][3150/8000]	lr: 1.054e-04, eta: 9 days, 4:04:02, time: 5.032, data_time: 1.098, memory: 26878, loss/map/drivable_area/focal: 0.9737, loss/map/ped_crossing/focal: 0.9639, loss/map/walkway/focal: 0.9825, loss: 2.9201, grad_norm: 14.7962
+2024-12-15 01:23:31,561 - mmdet3d - INFO - Epoch [1][3200/8000]	lr: 1.055e-04, eta: 9 days, 4:02:17, time: 5.111, data_time: 1.124, memory: 26878, loss/map/drivable_area/focal: 0.9156, loss/map/ped_crossing/focal: 0.9047, loss/map/walkway/focal: 0.9209, loss: 2.7412, grad_norm: 15.5792
+2024-12-15 01:27:46,286 - mmdet3d - INFO - Epoch [1][3250/8000]	lr: 1.057e-04, eta: 9 days, 3:59:47, time: 5.094, data_time: 1.083, memory: 26878, loss/map/drivable_area/focal: 0.9491, loss/map/ped_crossing/focal: 0.9382, loss/map/walkway/focal: 0.9540, loss: 2.8414, grad_norm: 14.8540
+2024-12-15 01:31:55,562 - mmdet3d - INFO - Epoch [1][3300/8000]	lr: 1.059e-04, eta: 9 days, 3:52:55, time: 4.986, data_time: 0.965, memory: 26878, loss/map/drivable_area/focal: 1.0231, loss/map/ped_crossing/focal: 1.0101, loss/map/walkway/focal: 1.0257, loss: 3.0589, grad_norm: 18.5990
+2024-12-15 01:36:07,497 - mmdet3d - INFO - Epoch [1][3350/8000]	lr: 1.061e-04, eta: 9 days, 3:48:12, time: 5.039, data_time: 1.064, memory: 26878, loss/map/drivable_area/focal: 0.9742, loss/map/ped_crossing/focal: 0.9629, loss/map/walkway/focal: 0.9808, loss: 2.9178, grad_norm: 16.6742
+2024-12-15 01:40:22,590 - mmdet3d - INFO - Epoch [1][3400/8000]	lr: 1.062e-04, eta: 9 days, 3:45:56, time: 5.102, data_time: 1.073, memory: 26878, loss/map/drivable_area/focal: 0.9211, loss/map/ped_crossing/focal: 0.9067, loss/map/walkway/focal: 0.9223, loss: 2.7501, grad_norm: 14.5167
+2024-12-15 01:44:31,761 - mmdet3d - INFO - Epoch [1][3450/8000]	lr: 1.064e-04, eta: 9 days, 3:39:08, time: 4.983, data_time: 1.020, memory: 26878, loss/map/drivable_area/focal: 0.9517, loss/map/ped_crossing/focal: 0.9453, loss/map/walkway/focal: 0.9587, loss: 2.8558, grad_norm: 15.2696
+2024-12-15 01:48:41,944 - mmdet3d - INFO - Epoch [1][3500/8000]	lr: 1.066e-04, eta: 9 days, 3:33:09, time: 5.004, data_time: 1.045, memory: 26878, loss/map/drivable_area/focal: 0.8744, loss/map/ped_crossing/focal: 0.8649, loss/map/walkway/focal: 0.8794, loss: 2.6188, grad_norm: 14.0479
+2024-12-15 01:52:59,616 - mmdet3d - INFO - Epoch [1][3550/8000]	lr: 1.068e-04, eta: 9 days, 3:32:44, time: 5.153, data_time: 1.127, memory: 26878, loss/map/drivable_area/focal: 0.9012, loss/map/ped_crossing/focal: 0.8956, loss/map/walkway/focal: 0.9120, loss: 2.7089, grad_norm: 14.4195
+2024-12-15 01:57:09,586 - mmdet3d - INFO - Epoch [1][3600/8000]	lr: 1.070e-04, eta: 9 days, 3:26:37, time: 4.999, data_time: 0.992, memory: 26878, loss/map/drivable_area/focal: 0.9164, loss/map/ped_crossing/focal: 0.9098, loss/map/walkway/focal: 0.9223, loss: 2.7485, grad_norm: 14.2128
+2024-12-15 02:01:17,917 - mmdet3d - INFO - Epoch [1][3650/8000]	lr: 1.072e-04, eta: 9 days, 3:19:23, time: 4.967, data_time: 1.102, memory: 26878, loss/map/drivable_area/focal: 0.9378, loss/map/ped_crossing/focal: 0.9283, loss/map/walkway/focal: 0.9432, loss: 2.8093, grad_norm: 14.8518
+2024-12-15 02:05:31,255 - mmdet3d - INFO - Epoch [1][3700/8000]	lr: 1.074e-04, eta: 9 days, 3:15:46, time: 5.067, data_time: 1.023, memory: 26878, loss/map/drivable_area/focal: 0.9269, loss/map/ped_crossing/focal: 0.9193, loss/map/walkway/focal: 0.9305, loss: 2.7768, grad_norm: 15.2376
+2024-12-15 02:09:45,927 - mmdet3d - INFO - Epoch [1][3750/8000]	lr: 1.076e-04, eta: 9 days, 3:13:04, time: 5.093, data_time: 1.096, memory: 26878, loss/map/drivable_area/focal: 0.9523, loss/map/ped_crossing/focal: 0.9414, loss/map/walkway/focal: 0.9604, loss: 2.8541, grad_norm: 15.1437
+2024-12-15 02:13:58,639 - mmdet3d - INFO - Epoch [1][3800/8000]	lr: 1.078e-04, eta: 9 days, 3:08:58, time: 5.054, data_time: 1.127, memory: 26878, loss/map/drivable_area/focal: 0.9303, loss/map/ped_crossing/focal: 0.9237, loss/map/walkway/focal: 0.9367, loss: 2.7906, grad_norm: 16.5929
+2024-12-15 02:18:15,367 - mmdet3d - INFO - Epoch [1][3850/8000]	lr: 1.080e-04, eta: 9 days, 3:07:36, time: 5.135, data_time: 1.016, memory: 26878, loss/map/drivable_area/focal: 1.0155, loss/map/ped_crossing/focal: 1.0066, loss/map/walkway/focal: 1.0195, loss: 3.0416, grad_norm: 16.1046
+2024-12-15 02:22:34,888 - mmdet3d - INFO - Epoch [1][3900/8000]	lr: 1.082e-04, eta: 9 days, 3:08:00, time: 5.190, data_time: 1.135, memory: 26878, loss/map/drivable_area/focal: 0.9502, loss/map/ped_crossing/focal: 0.9418, loss/map/walkway/focal: 0.9575, loss: 2.8495, grad_norm: 15.4337
+2024-12-15 02:26:52,834 - mmdet3d - INFO - Epoch [1][3950/8000]	lr: 1.084e-04, eta: 9 days, 3:07:15, time: 5.159, data_time: 1.004, memory: 26878, loss/map/drivable_area/focal: 0.9347, loss/map/ped_crossing/focal: 0.9189, loss/map/walkway/focal: 0.9377, loss: 2.7913, grad_norm: 14.5833
+2024-12-15 02:31:02,076 - mmdet3d - INFO - Epoch [1][4000/8000]	lr: 1.086e-04, eta: 9 days, 3:00:46, time: 4.985, data_time: 1.031, memory: 26878, loss/map/drivable_area/focal: 0.9077, loss/map/ped_crossing/focal: 0.8959, loss/map/walkway/focal: 0.9143, loss: 2.7180, grad_norm: 15.1740
+2024-12-15 02:35:18,226 - mmdet3d - INFO - Epoch [1][4050/8000]	lr: 1.089e-04, eta: 9 days, 2:58:46, time: 5.123, data_time: 1.058, memory: 26878, loss/map/drivable_area/focal: 0.8563, loss/map/ped_crossing/focal: 0.8490, loss/map/walkway/focal: 0.8664, loss: 2.5717, grad_norm: 14.0213
+2024-12-15 02:39:37,631 - mmdet3d - INFO - Epoch [1][4100/8000]	lr: 1.091e-04, eta: 9 days, 2:58:46, time: 5.188, data_time: 1.178, memory: 26878, loss/map/drivable_area/focal: 0.9462, loss/map/ped_crossing/focal: 0.9305, loss/map/walkway/focal: 0.9476, loss: 2.8243, grad_norm: 15.3887
+2024-12-15 02:43:56,201 - mmdet3d - INFO - Epoch [1][4150/8000]	lr: 1.093e-04, eta: 9 days, 2:58:08, time: 5.171, data_time: 1.229, memory: 26878, loss/map/drivable_area/focal: 0.9367, loss/map/ped_crossing/focal: 0.9251, loss/map/walkway/focal: 0.9387, loss: 2.8006, grad_norm: 14.7315
+2024-12-15 02:48:05,821 - mmdet3d - INFO - Epoch [1][4200/8000]	lr: 1.095e-04, eta: 9 days, 2:51:54, time: 4.992, data_time: 0.966, memory: 26878, loss/map/drivable_area/focal: 0.9233, loss/map/ped_crossing/focal: 0.9166, loss/map/walkway/focal: 0.9310, loss: 2.7710, grad_norm: 15.0064
+2024-12-15 02:52:21,556 - mmdet3d - INFO - Epoch [1][4250/8000]	lr: 1.098e-04, eta: 9 days, 2:49:26, time: 5.115, data_time: 1.028, memory: 26878, loss/map/drivable_area/focal: 0.8831, loss/map/ped_crossing/focal: 0.8787, loss/map/walkway/focal: 0.8907, loss: 2.6525, grad_norm: 14.3778
+2024-12-15 02:56:39,559 - mmdet3d - INFO - Epoch [1][4300/8000]	lr: 1.100e-04, eta: 9 days, 2:48:19, time: 5.160, data_time: 1.004, memory: 26878, loss/map/drivable_area/focal: 1.0044, loss/map/ped_crossing/focal: 0.9940, loss/map/walkway/focal: 1.0111, loss: 3.0095, grad_norm: 15.5300
+2024-12-15 03:00:50,322 - mmdet3d - INFO - Epoch [1][4350/8000]	lr: 1.102e-04, eta: 9 days, 2:42:47, time: 5.015, data_time: 1.026, memory: 26878, loss/map/drivable_area/focal: 0.9496, loss/map/ped_crossing/focal: 0.9389, loss/map/walkway/focal: 0.9544, loss: 2.8429, grad_norm: 14.6583
+2024-12-15 03:05:04,856 - mmdet3d - INFO - Epoch [1][4400/8000]	lr: 1.105e-04, eta: 9 days, 2:39:31, time: 5.091, data_time: 1.176, memory: 26882, loss/map/drivable_area/focal: 0.8641, loss/map/ped_crossing/focal: 0.8571, loss/map/walkway/focal: 0.8734, loss: 2.5946, grad_norm: 14.2256
+2024-12-15 03:09:15,192 - mmdet3d - INFO - Epoch [1][4450/8000]	lr: 1.107e-04, eta: 9 days, 2:33:47, time: 5.007, data_time: 0.970, memory: 26882, loss/map/drivable_area/focal: 0.8897, loss/map/ped_crossing/focal: 0.8812, loss/map/walkway/focal: 0.8929, loss: 2.6638, grad_norm: 14.0333
+2024-12-15 03:13:33,627 - mmdet3d - INFO - Epoch [1][4500/8000]	lr: 1.109e-04, eta: 9 days, 2:32:44, time: 5.169, data_time: 1.080, memory: 26882, loss/map/drivable_area/focal: 0.9171, loss/map/ped_crossing/focal: 0.9066, loss/map/walkway/focal: 0.9237, loss: 2.7473, grad_norm: 15.1604
+2024-12-15 03:17:43,785 - mmdet3d - INFO - Epoch [1][4550/8000]	lr: 1.112e-04, eta: 9 days, 2:26:55, time: 5.003, data_time: 1.006, memory: 26882, loss/map/drivable_area/focal: 0.8628, loss/map/ped_crossing/focal: 0.8554, loss/map/walkway/focal: 0.8681, loss: 2.5864, grad_norm: 13.5499
+2024-12-15 03:21:56,279 - mmdet3d - INFO - Epoch [1][4600/8000]	lr: 1.114e-04, eta: 9 days, 2:22:27, time: 5.050, data_time: 1.043, memory: 26882, loss/map/drivable_area/focal: 0.9530, loss/map/ped_crossing/focal: 0.9491, loss/map/walkway/focal: 0.9600, loss: 2.8622, grad_norm: 14.8278
+2024-12-15 03:26:04,436 - mmdet3d - INFO - Epoch [1][4650/8000]	lr: 1.117e-04, eta: 9 days, 2:15:33, time: 4.963, data_time: 0.855, memory: 26882, loss/map/drivable_area/focal: 0.8756, loss/map/ped_crossing/focal: 0.8692, loss/map/walkway/focal: 0.8816, loss: 2.6264, grad_norm: 15.0157
+2024-12-15 03:30:15,886 - mmdet3d - INFO - Epoch [1][4700/8000]	lr: 1.119e-04, eta: 9 days, 2:10:33, time: 5.029, data_time: 1.053, memory: 26882, loss/map/drivable_area/focal: 0.8936, loss/map/ped_crossing/focal: 0.8883, loss/map/walkway/focal: 0.9012, loss: 2.6831, grad_norm: 15.2525
+2024-12-15 03:34:35,584 - mmdet3d - INFO - Epoch [1][4750/8000]	lr: 1.122e-04, eta: 9 days, 2:10:03, time: 5.194, data_time: 1.100, memory: 26882, loss/map/drivable_area/focal: 0.9274, loss/map/ped_crossing/focal: 0.9121, loss/map/walkway/focal: 0.9302, loss: 2.7696, grad_norm: 14.3189
+2024-12-15 03:38:47,029 - mmdet3d - INFO - Epoch [1][4800/8000]	lr: 1.124e-04, eta: 9 days, 2:05:02, time: 5.029, data_time: 0.967, memory: 26882, loss/map/drivable_area/focal: 0.8743, loss/map/ped_crossing/focal: 0.8704, loss/map/walkway/focal: 0.8855, loss: 2.6302, grad_norm: 13.4190
+2024-12-15 03:43:04,035 - mmdet3d - INFO - Epoch [1][4850/8000]	lr: 1.127e-04, eta: 9 days, 2:02:59, time: 5.140, data_time: 1.117, memory: 26882, loss/map/drivable_area/focal: 0.9228, loss/map/ped_crossing/focal: 0.9139, loss/map/walkway/focal: 0.9265, loss: 2.7631, grad_norm: 14.6515
+2024-12-15 03:47:14,987 - mmdet3d - INFO - Epoch [1][4900/8000]	lr: 1.129e-04, eta: 9 days, 1:57:42, time: 5.019, data_time: 0.905, memory: 26882, loss/map/drivable_area/focal: 0.9113, loss/map/ped_crossing/focal: 0.9030, loss/map/walkway/focal: 0.9149, loss: 2.7292, grad_norm: 14.0667
+2024-12-15 03:51:33,242 - mmdet3d - INFO - Epoch [1][4950/8000]	lr: 1.132e-04, eta: 9 days, 1:56:15, time: 5.165, data_time: 1.088, memory: 26882, loss/map/drivable_area/focal: 0.9208, loss/map/ped_crossing/focal: 0.9118, loss/map/walkway/focal: 0.9279, loss: 2.7605, grad_norm: 13.4239
+2024-12-15 03:55:50,137 - mmdet3d - INFO - Epoch [1][5000/8000]	lr: 1.135e-04, eta: 9 days, 1:54:03, time: 5.138, data_time: 1.066, memory: 26882, loss/map/drivable_area/focal: 0.8967, loss/map/ped_crossing/focal: 0.8908, loss/map/walkway/focal: 0.9044, loss: 2.6919, grad_norm: 13.8717
+2024-12-15 04:00:06,486 - mmdet3d - INFO - Epoch [1][5050/8000]	lr: 1.138e-04, eta: 9 days, 1:51:31, time: 5.127, data_time: 1.008, memory: 26882, loss/map/drivable_area/focal: 0.9252, loss/map/ped_crossing/focal: 0.9145, loss/map/walkway/focal: 0.9287, loss: 2.7685, grad_norm: 15.2700
+2024-12-15 04:04:28,243 - mmdet3d - INFO - Epoch [1][5100/8000]	lr: 1.140e-04, eta: 9 days, 1:51:42, time: 5.235, data_time: 1.117, memory: 26882, loss/map/drivable_area/focal: 0.8271, loss/map/ped_crossing/focal: 0.8166, loss/map/walkway/focal: 0.8350, loss: 2.4787, grad_norm: 14.3883
+2024-12-15 04:08:48,396 - mmdet3d - INFO - Epoch [1][5150/8000]	lr: 1.143e-04, eta: 9 days, 1:50:59, time: 5.203, data_time: 1.028, memory: 26882, loss/map/drivable_area/focal: 0.8532, loss/map/ped_crossing/focal: 0.8466, loss/map/walkway/focal: 0.8571, loss: 2.5569, grad_norm: 13.7286
+2024-12-15 04:13:01,314 - mmdet3d - INFO - Epoch [1][5200/8000]	lr: 1.146e-04, eta: 9 days, 1:46:36, time: 5.058, data_time: 0.956, memory: 26882, loss/map/drivable_area/focal: 0.8449, loss/map/ped_crossing/focal: 0.8404, loss/map/walkway/focal: 0.8538, loss: 2.5392, grad_norm: 14.0828
+2024-12-15 04:17:20,615 - mmdet3d - INFO - Epoch [1][5250/8000]	lr: 1.149e-04, eta: 9 days, 1:45:20, time: 5.185, data_time: 1.098, memory: 26882, loss/map/drivable_area/focal: 0.8897, loss/map/ped_crossing/focal: 0.8807, loss/map/walkway/focal: 0.8965, loss: 2.6669, grad_norm: 15.4280
+2024-12-15 04:21:35,681 - mmdet3d - INFO - Epoch [1][5300/8000]	lr: 1.151e-04, eta: 9 days, 1:42:00, time: 5.102, data_time: 0.959, memory: 26882, loss/map/drivable_area/focal: 0.9270, loss/map/ped_crossing/focal: 0.9174, loss/map/walkway/focal: 0.9350, loss: 2.7793, grad_norm: 14.9210
+2024-12-15 04:25:47,836 - mmdet3d - INFO - Epoch [1][5350/8000]	lr: 1.154e-04, eta: 9 days, 1:37:14, time: 5.043, data_time: 1.008, memory: 26882, loss/map/drivable_area/focal: 0.8518, loss/map/ped_crossing/focal: 0.8400, loss/map/walkway/focal: 0.8564, loss: 2.5482, grad_norm: 13.6318
+2024-12-15 04:30:02,897 - mmdet3d - INFO - Epoch [1][5400/8000]	lr: 1.157e-04, eta: 9 days, 1:33:51, time: 5.101, data_time: 0.930, memory: 26882, loss/map/drivable_area/focal: 0.8485, loss/map/ped_crossing/focal: 0.8394, loss/map/walkway/focal: 0.8547, loss: 2.5426, grad_norm: 14.6294
+2024-12-15 04:34:20,475 - mmdet3d - INFO - Epoch [1][5450/8000]	lr: 1.160e-04, eta: 9 days, 1:31:39, time: 5.152, data_time: 1.083, memory: 26882, loss/map/drivable_area/focal: 0.7969, loss/map/ped_crossing/focal: 0.7896, loss/map/walkway/focal: 0.8053, loss: 2.3919, grad_norm: 12.4647
+2024-12-15 04:38:36,886 - mmdet3d - INFO - Epoch [1][5500/8000]	lr: 1.163e-04, eta: 9 days, 1:28:52, time: 5.128, data_time: 0.986, memory: 26882, loss/map/drivable_area/focal: 1.0009, loss/map/ped_crossing/focal: 0.9878, loss/map/walkway/focal: 1.0007, loss: 2.9893, grad_norm: 15.4020
+2024-12-15 04:42:55,423 - mmdet3d - INFO - Epoch [1][5550/8000]	lr: 1.166e-04, eta: 9 days, 1:27:02, time: 5.171, data_time: 0.992, memory: 26882, loss/map/drivable_area/focal: 0.8835, loss/map/ped_crossing/focal: 0.8789, loss/map/walkway/focal: 0.8905, loss: 2.6530, grad_norm: 13.6977
+2024-12-15 04:47:19,451 - mmdet3d - INFO - Epoch [1][5600/8000]	lr: 1.169e-04, eta: 9 days, 1:27:41, time: 5.281, data_time: 1.200, memory: 26882, loss/map/drivable_area/focal: 0.9141, loss/map/ped_crossing/focal: 0.9043, loss/map/walkway/focal: 0.9223, loss: 2.7408, grad_norm: 14.2683
+2024-12-15 04:51:37,197 - mmdet3d - INFO - Epoch [1][5650/8000]	lr: 1.172e-04, eta: 9 days, 1:25:23, time: 5.155, data_time: 1.013, memory: 26882, loss/map/drivable_area/focal: 0.8282, loss/map/ped_crossing/focal: 0.8239, loss/map/walkway/focal: 0.8356, loss: 2.4878, grad_norm: 13.9527
+2024-12-15 04:55:59,274 - mmdet3d - INFO - Epoch [1][5700/8000]	lr: 1.175e-04, eta: 9 days, 1:25:00, time: 5.241, data_time: 1.193, memory: 26882, loss/map/drivable_area/focal: 0.8720, loss/map/ped_crossing/focal: 0.8643, loss/map/walkway/focal: 0.8793, loss: 2.6156, grad_norm: 14.0629
+2024-12-15 05:00:11,976 - mmdet3d - INFO - Epoch [1][5750/8000]	lr: 1.178e-04, eta: 9 days, 1:20:21, time: 5.054, data_time: 1.010, memory: 26882, loss/map/drivable_area/focal: 0.9061, loss/map/ped_crossing/focal: 0.9006, loss/map/walkway/focal: 0.9135, loss: 2.7201, grad_norm: 15.1215
+2024-12-15 05:04:30,528 - mmdet3d - INFO - Epoch [1][5800/8000]	lr: 1.181e-04, eta: 9 days, 1:18:19, time: 5.171, data_time: 0.921, memory: 26882, loss/map/drivable_area/focal: 0.8966, loss/map/ped_crossing/focal: 0.8883, loss/map/walkway/focal: 0.9008, loss: 2.6857, grad_norm: 15.2420
+2024-12-15 05:08:52,159 - mmdet3d - INFO - Epoch [1][5850/8000]	lr: 1.184e-04, eta: 9 days, 1:17:35, time: 5.233, data_time: 1.191, memory: 26882, loss/map/drivable_area/focal: 0.8896, loss/map/ped_crossing/focal: 0.8850, loss/map/walkway/focal: 0.9002, loss: 2.6748, grad_norm: 14.3987
+2024-12-15 05:13:17,882 - mmdet3d - INFO - Epoch [1][5900/8000]	lr: 1.187e-04, eta: 9 days, 1:18:34, time: 5.314, data_time: 1.095, memory: 26882, loss/map/drivable_area/focal: 0.9220, loss/map/ped_crossing/focal: 0.9172, loss/map/walkway/focal: 0.9305, loss: 2.7697, grad_norm: 14.1075
+2024-12-15 05:17:37,498 - mmdet3d - INFO - Epoch [1][5950/8000]	lr: 1.191e-04, eta: 9 days, 1:16:50, time: 5.192, data_time: 1.217, memory: 26884, loss/map/drivable_area/focal: 0.8892, loss/map/ped_crossing/focal: 0.8849, loss/map/walkway/focal: 0.8996, loss: 2.6738, grad_norm: 14.7524
+2024-12-15 05:21:59,830 - mmdet3d - INFO - Epoch [1][6000/8000]	lr: 1.194e-04, eta: 9 days, 1:16:13, time: 5.247, data_time: 1.169, memory: 26884, loss/map/drivable_area/focal: 0.8424, loss/map/ped_crossing/focal: 0.8328, loss/map/walkway/focal: 0.8509, loss: 2.5261, grad_norm: 14.7584
+2024-12-15 05:26:16,761 - mmdet3d - INFO - Epoch [1][6050/8000]	lr: 1.197e-04, eta: 9 days, 1:13:15, time: 5.139, data_time: 1.164, memory: 26884, loss/map/drivable_area/focal: 0.9258, loss/map/ped_crossing/focal: 0.9194, loss/map/walkway/focal: 0.9317, loss: 2.7769, grad_norm: 15.4761
+2024-12-15 05:30:37,713 - mmdet3d - INFO - Epoch [1][6100/8000]	lr: 1.200e-04, eta: 9 days, 1:11:57, time: 5.219, data_time: 1.138, memory: 26884, loss/map/drivable_area/focal: 0.9645, loss/map/ped_crossing/focal: 0.9488, loss/map/walkway/focal: 0.9662, loss: 2.8795, grad_norm: 16.1804
+2024-12-15 05:35:04,560 - mmdet3d - INFO - Epoch [1][6150/8000]	lr: 1.203e-04, eta: 9 days, 1:13:04, time: 5.337, data_time: 1.227, memory: 26884, loss/map/drivable_area/focal: 0.8969, loss/map/ped_crossing/focal: 0.8873, loss/map/walkway/focal: 0.8987, loss: 2.6829, grad_norm: 13.1697
+2024-12-15 05:39:29,869 - mmdet3d - INFO - Epoch [1][6200/8000]	lr: 1.207e-04, eta: 9 days, 1:13:26, time: 5.306, data_time: 1.084, memory: 26884, loss/map/drivable_area/focal: 0.8520, loss/map/ped_crossing/focal: 0.8437, loss/map/walkway/focal: 0.8597, loss: 2.5554, grad_norm: 14.0597
+2024-12-15 05:43:50,417 - mmdet3d - INFO - Epoch [1][6250/8000]	lr: 1.210e-04, eta: 9 days, 1:11:48, time: 5.211, data_time: 1.104, memory: 26884, loss/map/drivable_area/focal: 0.9176, loss/map/ped_crossing/focal: 0.9087, loss/map/walkway/focal: 0.9214, loss: 2.7476, grad_norm: 14.2284
+2024-12-15 05:48:10,246 - mmdet3d - INFO - Epoch [1][6300/8000]	lr: 1.213e-04, eta: 9 days, 1:09:49, time: 5.197, data_time: 1.064, memory: 26884, loss/map/drivable_area/focal: 0.8519, loss/map/ped_crossing/focal: 0.8473, loss/map/walkway/focal: 0.8601, loss: 2.5593, grad_norm: 13.5959
+2024-12-15 05:52:30,217 - mmdet3d - INFO - Epoch [1][6350/8000]	lr: 1.217e-04, eta: 9 days, 1:07:51, time: 5.199, data_time: 1.210, memory: 26884, loss/map/drivable_area/focal: 0.8768, loss/map/ped_crossing/focal: 0.8740, loss/map/walkway/focal: 0.8830, loss: 2.6337, grad_norm: 14.3451
+2024-12-15 05:56:51,990 - mmdet3d - INFO - Epoch [1][6400/8000]	lr: 1.220e-04, eta: 9 days, 1:06:35, time: 5.235, data_time: 1.094, memory: 26884, loss/map/drivable_area/focal: 0.9335, loss/map/ped_crossing/focal: 0.9278, loss/map/walkway/focal: 0.9426, loss: 2.8039, grad_norm: 13.7908
+2024-12-15 06:01:07,756 - mmdet3d - INFO - Epoch [1][6450/8000]	lr: 1.224e-04, eta: 9 days, 1:02:52, time: 5.115, data_time: 1.043, memory: 26884, loss/map/drivable_area/focal: 0.8143, loss/map/ped_crossing/focal: 0.8059, loss/map/walkway/focal: 0.8189, loss: 2.4391, grad_norm: 12.2653
+2024-12-15 06:05:28,914 - mmdet3d - INFO - Epoch [1][6500/8000]	lr: 1.227e-04, eta: 9 days, 1:01:16, time: 5.223, data_time: 1.159, memory: 26884, loss/map/drivable_area/focal: 0.8306, loss/map/ped_crossing/focal: 0.8220, loss/map/walkway/focal: 0.8344, loss: 2.4871, grad_norm: 13.1106
+2024-12-15 06:09:48,710 - mmdet3d - INFO - Epoch [1][6550/8000]	lr: 1.231e-04, eta: 9 days, 0:59:06, time: 5.196, data_time: 1.034, memory: 26884, loss/map/drivable_area/focal: 0.8600, loss/map/ped_crossing/focal: 0.8439, loss/map/walkway/focal: 0.8588, loss: 2.5627, grad_norm: 13.2802
+2024-12-15 06:14:05,167 - mmdet3d - INFO - Epoch [1][6600/8000]	lr: 1.234e-04, eta: 9 days, 0:55:36, time: 5.129, data_time: 1.075, memory: 26884, loss/map/drivable_area/focal: 0.7833, loss/map/ped_crossing/focal: 0.7782, loss/map/walkway/focal: 0.7911, loss: 2.3526, grad_norm: 13.2249
+2024-12-15 06:18:29,144 - mmdet3d - INFO - Epoch [1][6650/8000]	lr: 1.238e-04, eta: 9 days, 0:54:59, time: 5.279, data_time: 1.099, memory: 26884, loss/map/drivable_area/focal: 0.8819, loss/map/ped_crossing/focal: 0.8752, loss/map/walkway/focal: 0.8880, loss: 2.6452, grad_norm: 14.9408
+2024-12-15 06:22:48,531 - mmdet3d - INFO - Epoch [1][6700/8000]	lr: 1.241e-04, eta: 9 days, 0:52:34, time: 5.188, data_time: 1.105, memory: 26884, loss/map/drivable_area/focal: 0.9216, loss/map/ped_crossing/focal: 0.9152, loss/map/walkway/focal: 0.9291, loss: 2.7658, grad_norm: 15.2957
+2024-12-15 06:27:07,450 - mmdet3d - INFO - Epoch [1][6750/8000]	lr: 1.245e-04, eta: 9 days, 0:49:56, time: 5.178, data_time: 1.140, memory: 26884, loss/map/drivable_area/focal: 0.8984, loss/map/ped_crossing/focal: 0.8889, loss/map/walkway/focal: 0.9034, loss: 2.6907, grad_norm: 15.2296
+2024-12-15 06:31:26,074 - mmdet3d - INFO - Epoch [1][6800/8000]	lr: 1.248e-04, eta: 9 days, 0:47:10, time: 5.172, data_time: 1.098, memory: 26884, loss/map/drivable_area/focal: 0.8905, loss/map/ped_crossing/focal: 0.8839, loss/map/walkway/focal: 0.8951, loss: 2.6696, grad_norm: 13.4307
+2024-12-15 06:35:40,200 - mmdet3d - INFO - Epoch [1][6850/8000]	lr: 1.252e-04, eta: 9 days, 0:42:43, time: 5.082, data_time: 1.080, memory: 26884, loss/map/drivable_area/focal: 0.8521, loss/map/ped_crossing/focal: 0.8441, loss/map/walkway/focal: 0.8593, loss: 2.5554, grad_norm: 14.4138
+2024-12-15 06:39:49,547 - mmdet3d - INFO - Epoch [1][6900/8000]	lr: 1.256e-04, eta: 9 days, 0:36:29, time: 4.987, data_time: 0.921, memory: 26884, loss/map/drivable_area/focal: 0.7970, loss/map/ped_crossing/focal: 0.7922, loss/map/walkway/focal: 0.8047, loss: 2.3939, grad_norm: 11.7173
+2024-12-15 06:43:55,338 - mmdet3d - INFO - Epoch [1][6950/8000]	lr: 1.259e-04, eta: 9 days, 0:28:59, time: 4.916, data_time: 0.744, memory: 26884, loss/map/drivable_area/focal: 0.8473, loss/map/ped_crossing/focal: 0.8458, loss/map/walkway/focal: 0.8536, loss: 2.5467, grad_norm: 14.1581
+2024-12-15 06:48:15,032 - mmdet3d - INFO - Epoch [1][7000/8000]	lr: 1.263e-04, eta: 9 days, 0:26:36, time: 5.194, data_time: 1.299, memory: 26884, loss/map/drivable_area/focal: 0.8014, loss/map/ped_crossing/focal: 0.7941, loss/map/walkway/focal: 0.8074, loss: 2.4029, grad_norm: 13.3520
+2024-12-15 06:52:33,684 - mmdet3d - INFO - Epoch [1][7050/8000]	lr: 1.267e-04, eta: 9 days, 0:23:48, time: 5.173, data_time: 0.954, memory: 26884, loss/map/drivable_area/focal: 0.9404, loss/map/ped_crossing/focal: 0.9336, loss/map/walkway/focal: 0.9478, loss: 2.8219, grad_norm: 15.8314
+2024-12-15 06:56:42,798 - mmdet3d - INFO - Epoch [1][7100/8000]	lr: 1.270e-04, eta: 9 days, 0:17:34, time: 4.982, data_time: 0.911, memory: 26884, loss/map/drivable_area/focal: 0.8676, loss/map/ped_crossing/focal: 0.8636, loss/map/walkway/focal: 0.8751, loss: 2.6063, grad_norm: 13.6170
+2024-12-15 07:00:56,117 - mmdet3d - INFO - Epoch [1][7150/8000]	lr: 1.274e-04, eta: 9 days, 0:12:51, time: 5.066, data_time: 1.081, memory: 26884, loss/map/drivable_area/focal: 0.9302, loss/map/ped_crossing/focal: 0.9215, loss/map/walkway/focal: 0.9365, loss: 2.7882, grad_norm: 15.4200
+2024-12-15 07:04:59,669 - mmdet3d - INFO - Epoch [1][7200/8000]	lr: 1.278e-04, eta: 9 days, 0:04:42, time: 4.871, data_time: 0.761, memory: 26884, loss/map/drivable_area/focal: 0.8675, loss/map/ped_crossing/focal: 0.8596, loss/map/walkway/focal: 0.8718, loss: 2.5990, grad_norm: 12.6937
+2024-12-15 07:09:06,817 - mmdet3d - INFO - Epoch [1][7250/8000]	lr: 1.282e-04, eta: 8 days, 23:57:51, time: 4.943, data_time: 1.069, memory: 26884, loss/map/drivable_area/focal: 0.8320, loss/map/ped_crossing/focal: 0.8249, loss/map/walkway/focal: 0.8373, loss: 2.4942, grad_norm: 12.7537
+2024-12-15 07:13:17,246 - mmdet3d - INFO - Epoch [1][7300/8000]	lr: 1.286e-04, eta: 8 days, 23:52:12, time: 5.009, data_time: 0.940, memory: 26884, loss/map/drivable_area/focal: 0.8729, loss/map/ped_crossing/focal: 0.8640, loss/map/walkway/focal: 0.8792, loss: 2.6161, grad_norm: 13.7929
+2024-12-15 07:17:35,107 - mmdet3d - INFO - Epoch [1][7350/8000]	lr: 1.290e-04, eta: 8 days, 23:49:08, time: 5.157, data_time: 1.088, memory: 26884, loss/map/drivable_area/focal: 0.8851, loss/map/ped_crossing/focal: 0.8764, loss/map/walkway/focal: 0.8904, loss: 2.6520, grad_norm: 13.2643
+2024-12-15 07:22:01,694 - mmdet3d - INFO - Epoch [1][7400/8000]	lr: 1.294e-04, eta: 8 days, 23:49:03, time: 5.332, data_time: 1.355, memory: 26884, loss/map/drivable_area/focal: 0.8056, loss/map/ped_crossing/focal: 0.8006, loss/map/walkway/focal: 0.8157, loss: 2.4219, grad_norm: 13.8158
+2024-12-15 07:26:18,424 - mmdet3d - INFO - Epoch [1][7450/8000]	lr: 1.297e-04, eta: 8 days, 23:45:33, time: 5.135, data_time: 0.957, memory: 26884, loss/map/drivable_area/focal: 0.8226, loss/map/ped_crossing/focal: 0.8166, loss/map/walkway/focal: 0.8349, loss: 2.4741, grad_norm: 13.9527
+2024-12-15 07:30:36,023 - mmdet3d - INFO - Epoch [1][7500/8000]	lr: 1.301e-04, eta: 8 days, 23:42:19, time: 5.152, data_time: 0.994, memory: 26884, loss/map/drivable_area/focal: 0.8791, loss/map/ped_crossing/focal: 0.8745, loss/map/walkway/focal: 0.8909, loss: 2.6445, grad_norm: 13.4072
+2024-12-15 07:34:48,190 - mmdet3d - INFO - Epoch [1][7550/8000]	lr: 1.305e-04, eta: 8 days, 23:37:16, time: 5.043, data_time: 0.988, memory: 26884, loss/map/drivable_area/focal: 0.7718, loss/map/ped_crossing/focal: 0.7666, loss/map/walkway/focal: 0.7789, loss: 2.3173, grad_norm: 12.8950
+2024-12-15 07:38:56,766 - mmdet3d - INFO - Epoch [1][7600/8000]	lr: 1.309e-04, eta: 8 days, 23:31:00, time: 4.972, data_time: 0.855, memory: 26884, loss/map/drivable_area/focal: 0.7814, loss/map/ped_crossing/focal: 0.7720, loss/map/walkway/focal: 0.7914, loss: 2.3448, grad_norm: 12.9195
+2024-12-15 07:43:07,138 - mmdet3d - INFO - Epoch [1][7650/8000]	lr: 1.313e-04, eta: 8 days, 23:25:23, time: 5.007, data_time: 0.918, memory: 26884, loss/map/drivable_area/focal: 0.9275, loss/map/ped_crossing/focal: 0.9240, loss/map/walkway/focal: 0.9372, loss: 2.7887, grad_norm: 14.4003
+2024-12-15 07:47:20,806 - mmdet3d - INFO - Epoch [1][7700/8000]	lr: 1.318e-04, eta: 8 days, 23:20:51, time: 5.073, data_time: 1.103, memory: 26884, loss/map/drivable_area/focal: 0.7849, loss/map/ped_crossing/focal: 0.7779, loss/map/walkway/focal: 0.7952, loss: 2.3580, grad_norm: 12.8319
+2024-12-15 07:51:39,100 - mmdet3d - INFO - Epoch [1][7750/8000]	lr: 1.322e-04, eta: 8 days, 23:17:51, time: 5.166, data_time: 1.172, memory: 26884, loss/map/drivable_area/focal: 0.8276, loss/map/ped_crossing/focal: 0.8246, loss/map/walkway/focal: 0.8365, loss: 2.4886, grad_norm: 13.3496
+2024-12-15 07:55:54,671 - mmdet3d - INFO - Epoch [1][7800/8000]	lr: 1.326e-04, eta: 8 days, 23:13:57, time: 5.111, data_time: 0.963, memory: 26884, loss/map/drivable_area/focal: 0.8314, loss/map/ped_crossing/focal: 0.8260, loss/map/walkway/focal: 0.8375, loss: 2.4949, grad_norm: 12.5471
+2024-12-15 08:00:06,363 - mmdet3d - INFO - Epoch [1][7850/8000]	lr: 1.330e-04, eta: 8 days, 23:08:47, time: 5.034, data_time: 0.973, memory: 26884, loss/map/drivable_area/focal: 0.8908, loss/map/ped_crossing/focal: 0.8865, loss/map/walkway/focal: 0.8997, loss: 2.6770, grad_norm: 15.1309
+2024-12-15 08:04:22,981 - mmdet3d - INFO - Epoch [1][7900/8000]	lr: 1.334e-04, eta: 8 days, 23:05:12, time: 5.132, data_time: 1.056, memory: 26884, loss/map/drivable_area/focal: 0.8522, loss/map/ped_crossing/focal: 0.8477, loss/map/walkway/focal: 0.8619, loss: 2.5618, grad_norm: 14.5311
+2024-12-15 08:08:40,741 - mmdet3d - INFO - Epoch [1][7950/8000]	lr: 1.338e-04, eta: 8 days, 23:01:59, time: 5.155, data_time: 1.129, memory: 26884, loss/map/drivable_area/focal: 0.8402, loss/map/ped_crossing/focal: 0.8359, loss/map/walkway/focal: 0.8496, loss: 2.5257, grad_norm: 13.0368
+2024-12-15 08:12:56,836 - mmdet3d - INFO - Epoch [1][8000/8000]	lr: 1.342e-04, eta: 8 days, 22:58:14, time: 5.122, data_time: 0.944, memory: 26884, loss/map/drivable_area/focal: 0.8032, loss/map/ped_crossing/focal: 0.7972, loss/map/walkway/focal: 0.8119, loss: 2.4124, grad_norm: 12.8093
+2024-12-15 08:12:57,188 - mmdet3d - INFO - Saving checkpoint at 1 epochs
+2024-12-15 09:55:53,766 - mmdet3d - INFO - Epoch(val) [1][2000]	map/drivable_area/iou@max: 0.7929, map/drivable_area/iou@0.35: 0.7809, map/drivable_area/iou@0.40: 0.7889, map/drivable_area/iou@0.45: 0.7929, map/drivable_area/iou@0.50: 0.7875, map/drivable_area/iou@0.55: 0.7705, map/drivable_area/iou@0.60: 0.7416, map/drivable_area/iou@0.65: 0.6979, map/ped_crossing/iou@max: 0.3290, map/ped_crossing/iou@0.35: 0.3161, map/ped_crossing/iou@0.40: 0.3290, map/ped_crossing/iou@0.45: 0.3111, map/ped_crossing/iou@0.50: 0.2400, map/ped_crossing/iou@0.55: 0.0918, map/ped_crossing/iou@0.60: 0.0272, map/ped_crossing/iou@0.65: 0.0057, map/walkway/iou@max: 0.3601, map/walkway/iou@0.35: 0.3368, map/walkway/iou@0.40: 0.3601, map/walkway/iou@0.45: 0.3518, map/walkway/iou@0.50: 0.3004, map/walkway/iou@0.55: 0.1985, map/walkway/iou@0.60: 0.0661, map/walkway/iou@0.65: 0.0046, map/mean/iou@max: 0.4940
+2024-12-15 09:59:26,105 - mmdet3d - INFO - Epoch [2][50/8000]	lr: 1.347e-04, eta: 8 days, 22:40:41, time: 4.246, data_time: 0.181, memory: 26884, loss/map/drivable_area/focal: 0.8587, loss/map/ped_crossing/focal: 0.8423, loss/map/walkway/focal: 0.8618, loss: 2.5628, grad_norm: 13.2318
+2024-12-15 10:02:58,759 - mmdet3d - INFO - Epoch [2][100/8000]	lr: 1.351e-04, eta: 8 days, 22:23:26, time: 4.253, data_time: 0.060, memory: 26884, loss/map/drivable_area/focal: 0.8263, loss/map/ped_crossing/focal: 0.8155, loss/map/walkway/focal: 0.8332, loss: 2.4750, grad_norm: 12.0812
+2024-12-15 10:06:26,579 - mmdet3d - INFO - Epoch [2][150/8000]	lr: 1.355e-04, eta: 8 days, 22:04:51, time: 4.156, data_time: 0.133, memory: 26884, loss/map/drivable_area/focal: 0.8122, loss/map/ped_crossing/focal: 0.8084, loss/map/walkway/focal: 0.8231, loss: 2.4437, grad_norm: 13.2736
+2024-12-15 10:09:46,310 - mmdet3d - INFO - Epoch [2][200/8000]	lr: 1.360e-04, eta: 8 days, 21:43:56, time: 3.995, data_time: 0.034, memory: 26884, loss/map/drivable_area/focal: 0.8584, loss/map/ped_crossing/focal: 0.8549, loss/map/walkway/focal: 0.8674, loss: 2.5807, grad_norm: 13.7755
+2024-12-15 10:13:10,860 - mmdet3d - INFO - Epoch [2][250/8000]	lr: 1.364e-04, eta: 8 days, 21:24:44, time: 4.091, data_time: 0.137, memory: 26884, loss/map/drivable_area/focal: 0.8940, loss/map/ped_crossing/focal: 0.8878, loss/map/walkway/focal: 0.8990, loss: 2.6808, grad_norm: 15.9229
+2024-12-15 10:16:42,258 - mmdet3d - INFO - Epoch [2][300/8000]	lr: 1.368e-04, eta: 8 days, 21:07:47, time: 4.228, data_time: 0.033, memory: 26884, loss/map/drivable_area/focal: 0.8588, loss/map/ped_crossing/focal: 0.8534, loss/map/walkway/focal: 0.8697, loss: 2.5819, grad_norm: 13.7275
+2024-12-15 10:20:05,034 - mmdet3d - INFO - Epoch [2][350/8000]	lr: 1.373e-04, eta: 8 days, 20:48:25, time: 4.056, data_time: 0.080, memory: 26884, loss/map/drivable_area/focal: 0.7946, loss/map/ped_crossing/focal: 0.7904, loss/map/walkway/focal: 0.8044, loss: 2.3894, grad_norm: 12.6679
+2024-12-15 10:23:33,922 - mmdet3d - INFO - Epoch [2][400/8000]	lr: 1.377e-04, eta: 8 days, 20:31:02, time: 4.177, data_time: 0.037, memory: 26884, loss/map/drivable_area/focal: 0.8738, loss/map/ped_crossing/focal: 0.8713, loss/map/walkway/focal: 0.8848, loss: 2.6299, grad_norm: 14.0830
+2024-12-15 10:27:05,041 - mmdet3d - INFO - Epoch [2][450/8000]	lr: 1.382e-04, eta: 8 days, 20:14:31, time: 4.222, data_time: 0.036, memory: 26884, loss/map/drivable_area/focal: 0.8302, loss/map/ped_crossing/focal: 0.8194, loss/map/walkway/focal: 0.8421, loss: 2.4917, grad_norm: 13.5087
+2024-12-15 10:30:32,733 - mmdet3d - INFO - Epoch [2][500/8000]	lr: 1.386e-04, eta: 8 days, 19:57:08, time: 4.154, data_time: 0.044, memory: 26884, loss/map/drivable_area/focal: 0.7694, loss/map/ped_crossing/focal: 0.7632, loss/map/walkway/focal: 0.7810, loss: 2.3136, grad_norm: 13.0098
+2024-12-15 10:33:59,464 - mmdet3d - INFO - Epoch [2][550/8000]	lr: 1.390e-04, eta: 8 days, 19:39:37, time: 4.135, data_time: 0.038, memory: 26884, loss/map/drivable_area/focal: 0.8063, loss/map/ped_crossing/focal: 0.8014, loss/map/walkway/focal: 0.8163, loss: 2.4240, grad_norm: 12.8295
+2024-12-15 10:37:28,286 - mmdet3d - INFO - Epoch [2][600/8000]	lr: 1.395e-04, eta: 8 days, 19:22:53, time: 4.176, data_time: 0.127, memory: 26884, loss/map/drivable_area/focal: 0.8500, loss/map/ped_crossing/focal: 0.8408, loss/map/walkway/focal: 0.8576, loss: 2.5485, grad_norm: 13.0319
+2024-12-15 10:40:55,072 - mmdet3d - INFO - Epoch [2][650/8000]	lr: 1.400e-04, eta: 8 days, 19:05:43, time: 4.136, data_time: 0.071, memory: 26884, loss/map/drivable_area/focal: 0.8193, loss/map/ped_crossing/focal: 0.8114, loss/map/walkway/focal: 0.8278, loss: 2.4585, grad_norm: 14.2621
+2024-12-15 10:44:22,923 - mmdet3d - INFO - Epoch [2][700/8000]	lr: 1.404e-04, eta: 8 days, 18:49:00, time: 4.157, data_time: 0.036, memory: 26884, loss/map/drivable_area/focal: 0.8821, loss/map/ped_crossing/focal: 0.8693, loss/map/walkway/focal: 0.8838, loss: 2.6352, grad_norm: 13.3684
+2024-12-15 10:47:52,412 - mmdet3d - INFO - Epoch [2][750/8000]	lr: 1.409e-04, eta: 8 days, 18:32:55, time: 4.190, data_time: 0.073, memory: 26884, loss/map/drivable_area/focal: 0.8228, loss/map/ped_crossing/focal: 0.8188, loss/map/walkway/focal: 0.8300, loss: 2.4716, grad_norm: 14.1526
+2024-12-15 10:51:20,280 - mmdet3d - INFO - Epoch [2][800/8000]	lr: 1.413e-04, eta: 8 days, 18:16:31, time: 4.157, data_time: 0.038, memory: 26884, loss/map/drivable_area/focal: 0.8932, loss/map/ped_crossing/focal: 0.8909, loss/map/walkway/focal: 0.9033, loss: 2.6874, grad_norm: 14.0309
+2024-12-15 10:54:43,723 - mmdet3d - INFO - Epoch [2][850/8000]	lr: 1.418e-04, eta: 8 days, 17:59:00, time: 4.069, data_time: 0.115, memory: 26884, loss/map/drivable_area/focal: 0.8347, loss/map/ped_crossing/focal: 0.8297, loss/map/walkway/focal: 0.8438, loss: 2.5082, grad_norm: 13.7563
+2024-12-15 10:58:07,088 - mmdet3d - INFO - Epoch [2][900/8000]	lr: 1.423e-04, eta: 8 days, 17:41:37, time: 4.067, data_time: 0.042, memory: 26884, loss/map/drivable_area/focal: 0.7975, loss/map/ped_crossing/focal: 0.7899, loss/map/walkway/focal: 0.8073, loss: 2.3947, grad_norm: 12.1562
+2024-12-15 11:01:34,889 - mmdet3d - INFO - Epoch [2][950/8000]	lr: 1.427e-04, eta: 8 days, 17:25:38, time: 4.156, data_time: 0.063, memory: 26884, loss/map/drivable_area/focal: 0.7879, loss/map/ped_crossing/focal: 0.7850, loss/map/walkway/focal: 0.7982, loss: 2.3711, grad_norm: 12.7998
+2024-12-15 11:05:04,525 - mmdet3d - INFO - Epoch [2][1000/8000]	lr: 1.432e-04, eta: 8 days, 17:10:19, time: 4.193, data_time: 0.039, memory: 26884, loss/map/drivable_area/focal: 0.8749, loss/map/ped_crossing/focal: 0.8678, loss/map/walkway/focal: 0.8837, loss: 2.6265, grad_norm: 14.2393
+2024-12-15 11:08:27,346 - mmdet3d - INFO - Epoch [2][1050/8000]	lr: 1.437e-04, eta: 8 days, 16:53:13, time: 4.056, data_time: 0.066, memory: 26884, loss/map/drivable_area/focal: 0.8431, loss/map/ped_crossing/focal: 0.8397, loss/map/walkway/focal: 0.8527, loss: 2.5355, grad_norm: 15.1589
+2024-12-15 11:11:54,900 - mmdet3d - INFO - Epoch [2][1100/8000]	lr: 1.441e-04, eta: 8 days, 16:37:36, time: 4.151, data_time: 0.043, memory: 26884, loss/map/drivable_area/focal: 0.8530, loss/map/ped_crossing/focal: 0.8499, loss/map/walkway/focal: 0.8606, loss: 2.5635, grad_norm: 12.2243
+2024-12-15 11:15:14,854 - mmdet3d - INFO - Epoch [2][1150/8000]	lr: 1.446e-04, eta: 8 days, 16:20:00, time: 3.998, data_time: 0.064, memory: 26884, loss/map/drivable_area/focal: 0.8753, loss/map/ped_crossing/focal: 0.8700, loss/map/walkway/focal: 0.8865, loss: 2.6317, grad_norm: 14.9219
+2024-12-15 11:18:48,055 - mmdet3d - INFO - Epoch [2][1200/8000]	lr: 1.451e-04, eta: 8 days, 16:06:11, time: 4.264, data_time: 0.044, memory: 26884, loss/map/drivable_area/focal: 0.8449, loss/map/ped_crossing/focal: 0.8405, loss/map/walkway/focal: 0.8543, loss: 2.5398, grad_norm: 13.8605
+2024-12-15 11:22:12,309 - mmdet3d - INFO - Epoch [2][1250/8000]	lr: 1.456e-04, eta: 8 days, 15:50:04, time: 4.085, data_time: 0.044, memory: 26884, loss/map/drivable_area/focal: 0.8415, loss/map/ped_crossing/focal: 0.8375, loss/map/walkway/focal: 0.8522, loss: 2.5312, grad_norm: 13.5907

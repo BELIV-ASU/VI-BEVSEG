@@ -1,0 +1,5 @@
+{}
+{"mode": "train", "epoch": 1, "iter": 50, "lr": 0.0001, "memory": 24849, "data_time": 0.44602, "loss/map/drivable_area/focal": NaN, "loss/map/ped_crossing/focal": NaN, "loss/map/walkway/focal": NaN, "loss": NaN, "grad_norm": NaN, "time": 3.05187}
+{"mode": "train", "epoch": 1, "iter": 100, "lr": 0.0001, "memory": 24849, "data_time": 0.80207, "loss/map/drivable_area/focal": NaN, "loss/map/ped_crossing/focal": NaN, "loss/map/walkway/focal": NaN, "loss": NaN, "grad_norm": NaN, "time": 3.13546}
+{"mode": "train", "epoch": 1, "iter": 150, "lr": 0.0001, "memory": 24936, "data_time": 0.77617, "loss/map/drivable_area/focal": NaN, "loss/map/ped_crossing/focal": NaN, "loss/map/walkway/focal": NaN, "loss": NaN, "grad_norm": NaN, "time": 3.17444}
+{"mode": "train", "epoch": 1, "iter": 200, "lr": 0.0001, "memory": 24936, "data_time": 0.62938, "loss/map/drivable_area/focal": NaN, "loss/map/ped_crossing/focal": NaN, "loss/map/walkway/focal": NaN, "loss": NaN, "grad_norm": NaN, "time": 3.12921}

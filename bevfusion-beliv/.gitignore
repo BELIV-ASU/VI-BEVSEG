@@ -1,0 +1,12 @@
+/data/
+/pretrained/
+/train_result/
+/train_result_att/
+/vis_result_all__pred/
+/vis_result_att/
+/vis_result_IC_VC_pred/
+/vis_result_2_pred/
+/runs/
+/vis_result/
+/build/
+*.pth

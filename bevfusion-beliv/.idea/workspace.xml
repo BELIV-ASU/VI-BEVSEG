@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="4f6090d9-9b36-4bd1-af7e-962a76e958fb" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/bevfusion-main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/bevfusion-main.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/launch.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/launch.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/default.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/default.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/nuscenes/default.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/nuscenes/default.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/default.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/default.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/secfpn/camera+lidar/default.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/secfpn/camera+lidar/default.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/convfuser.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/convfuser.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/default.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/default.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mmdet3d/core/utils/visualize.py" beforeDir="false" afterPath="$PROJECT_DIR$/mmdet3d/core/utils/visualize.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mmdet3d/datasets/pipelines/loading.py" beforeDir="false" afterPath="$PROJECT_DIR$/mmdet3d/datasets/pipelines/loading.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mmdet3d/datasets/pipelines/transforms_3d.py" beforeDir="false" afterPath="$PROJECT_DIR$/mmdet3d/datasets/pipelines/transforms_3d.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mmdet3d/models/fusion_models/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/mmdet3d/models/fusion_models/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mmdet3d/models/fusion_models/bevfusion.py" beforeDir="false" afterPath="$PROJECT_DIR$/mmdet3d/models/fusion_models/bevfusion.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mmdet3d/models/vtransforms/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/mmdet3d/models/vtransforms/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/data_converter/nuscenes_converter_infra.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/data_converter/nuscenes_converter_infra.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/train.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tools/visualize.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/visualize.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/visualize test.py" beforeDir="false" afterPath="$PROJECT_DIR$/visualize test.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2fHezh5lpfd64ODIq6Goe9Ui6Ry" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "last_opened_file_path": "/home/jingxiong/bevfusion-main/mmdet3d/models/fusion_models",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/mmdet3d/models/fusion_models" />
+      <recent name="$PROJECT_DIR$/tools/data_converter" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.Lidar_concat">
+    <configuration name="Lidar_concat" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="bevfusion-main" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Lidar_concat.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="create_data_2" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="bevfusion-main" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tools" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tools/create_data_2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="nuscenes_converter" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="bevfusion-main" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tools/data_converter" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tools/data_converter/nuscenes_converter.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="nuscenes_converter_infra" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="bevfusion-main" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tools/data_converter" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/tools/data_converter/nuscenes_converter_infra.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="visualize test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="bevfusion-main" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/visualize test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.Lidar_concat" />
+        <item itemvalue="Python.create_data_2" />
+        <item itemvalue="Python.visualize test" />
+        <item itemvalue="Python.nuscenes_converter_infra" />
+        <item itemvalue="Python.nuscenes_converter" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="4f6090d9-9b36-4bd1-af7e-962a76e958fb" name="Changes" comment="" />
+      <created>1713462694667</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1713462694667</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tools/test.py</url>
+          <line>174</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tools/data_converter/nuscenes_converter.py</url>
+          <line>354</line>
+          <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/visualize test.py</url>
+          <line>81</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
