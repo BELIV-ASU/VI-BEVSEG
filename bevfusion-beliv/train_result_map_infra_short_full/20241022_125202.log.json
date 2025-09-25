@@ -1,2 +1,0 @@
-{}
-{"mode": "train", "epoch": 1, "iter": 50, "lr": 0.0001, "memory": 6924, "data_time": 3.17964, "loss/map/drivable_area/focal": 0.15195, "loss/map/ped_crossing/focal": 0.09093, "loss/map/walkway/focal": 0.10166, "loss": 0.34454, "grad_norm": 2.62061, "time": 3.88668}
